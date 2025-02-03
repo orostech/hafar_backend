@@ -4,19 +4,17 @@ from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-# os.environ['GDAL_LIBRARY_PATH'] = r'C:/Program Files/GDAL/gdal303.dll'
 
+SECRET_KEY = os.getenv('SECRET_KEY')
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-4c5(90s42=j)dhx4am$%b8&)@jy@7t(3pdznu0qem+4+k*j2hh'
+# SECRET_KEY = 'django-insecure-4c5(90s42=j)dhx4am$%b8&)@jy@7t(3pdznu0qem+4+k*j2hh'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', '10.0.2.2', 'f207-102-89-82-30.ngrok-free.app']
+# ALLOWED_HOSTS = ['127.0.0.1', '10.0.2.2', 'f207-102-89-82-30.ngrok-free.app']
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 
 
 # Application definition
@@ -88,8 +86,10 @@ REST_FRAMEWORK = {
 
 SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('JWT',),
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=15),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=20),
+    # 'ACCESS_TOKEN_LIFETIME': timedelta(days=15),
+    # 'REFRESH_TOKEN_LIFETIME': timedelta(days=20),
+     'ACCESS_TOKEN_LIFETIME': timedelta(days=int(os.getenv('JWT_ACCESS_TOKEN_LIFETIME_DAYS', 1))),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=int(os.getenv('JWT_REFRESH_TOKEN_LIFETIME_DAYS', 1))),
     'ROTATE_REFRESH_TOKENS': True,
 
 }
@@ -100,10 +100,20 @@ ASGI_APPLICATION = 'hafar_backend.asgi.application'
 # daphne -b 0.0.0.0 -p 8000 hafar_backend.asgi:application
 
 CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer",  # Use Redis in production
+     "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+        # "BACKEND": "channels_redis.core.RedisChannelLayer",
+        # "CONFIG": {
+        #     "hosts": [(os.getenv('REDIS_URL', 'redis://localhost:6379/1'))],
+        # },
     },
+    # "default": {
+    #     "BACKEND": "channels.layers.InMemoryChannelLayer",  # Use Redis in production
+    # },
 }
+
+
+
 
 AUTH_USER_MODEL = 'users.user'
 
@@ -120,14 +130,12 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100MB
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        # 'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'NAME': 'hafar',
-        'USER': 'mabsademola',
-        'PASSWORD': 'mabsademola',
-        'HOST': 'localhost',
-        'PORT': '5432',
-
+        'ENGINE': os.getenv('DB_ENGINE'),
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
     }
 }
 
