@@ -1,0 +1,71 @@
+# Python
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.sqlite3
+
+# Django
+*.log
+*.pot
+*.pyc
+*.pyo
+
+# Local environment
+.env
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+
+# VS Code
+.vscode/
+
+# PyCharm
+.idea/
+
+# Miscellaneous
+.DS_Store
+Thumbs.db
+*.bak
+*.tmp
+
+# Database files
+*.sqlite3
+
+# Static and Media files
+/static/
+.media/
+
+# Coverage reports
+coverage/**
+*.cover
+*.py,cover
+*.xml
+*.html
+*.txt
+
+# Sphinx documentation
+docs/_build/
+
+# Node.js
+node_modules/
+package-lock.json
+
+# Python egg files
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Jupyter Notebook files
+.ipynb_checkpoints/
+
+# Test coverage
+.coverage
+coverage.xml
+
+# other files
+*.mm.txt
+*deploy1.sh
