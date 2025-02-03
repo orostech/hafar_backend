@@ -1,20 +1,32 @@
 from datetime import timedelta
 import os
 from pathlib import Path
+from decouple import config, Csv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv('SECRET_KEY')
-DEBUG = os.getenv('DEBUG', 'False') == 'True'
+
+
+
+
+
+DEBUG = config('DEBUG', default=False, cast=bool)
+
+
+SECRET_KEY = config('SECRET_KEY')
+ALLOWED_HOSTS = config('ALLOWED_HOSTS',cast=Csv())
+
+# # SECRET_KEY = config('SECRET_KEY')
+# DEBUG = config('DEBUG', 'False') == 'True'
 
 # SECRET_KEY = 'django-insecure-4c5(90s42=j)dhx4am$%b8&)@jy@7t(3pdznu0qem+4+k*j2hh'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-# DEBUG = True
+# # SECURITY WARNING: don't run with debug turned on in production!
+# # DEBUG = True
 
-# ALLOWED_HOSTS = ['127.0.0.1', '10.0.2.2', 'f207-102-89-82-30.ngrok-free.app']
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
+# # ALLOWED_HOSTS = ['127.0.0.1', '10.0.2.2', 'f207-102-89-82-30.ngrok-free.app']
+# ALLOWED_HOSTS = config('ALLOWED_HOSTS', '').split(',')
 
 
 # Application definition
@@ -86,10 +98,10 @@ REST_FRAMEWORK = {
 
 SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('JWT',),
-    # 'ACCESS_TOKEN_LIFETIME': timedelta(days=15),
-    # 'REFRESH_TOKEN_LIFETIME': timedelta(days=20),
-     'ACCESS_TOKEN_LIFETIME': timedelta(days=int(os.getenv('JWT_ACCESS_TOKEN_LIFETIME_DAYS', 1))),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=int(os.getenv('JWT_REFRESH_TOKEN_LIFETIME_DAYS', 1))),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=15),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=20),
+    #  'ACCESS_TOKEN_LIFETIME': timedelta(days=int(config('JWT_ACCESS_TOKEN_LIFETIME_DAYS', 1))),
+    # 'REFRESH_TOKEN_LIFETIME': timedelta(days=int(config('JWT_REFRESH_TOKEN_LIFETIME_DAYS', 1))),
     'ROTATE_REFRESH_TOKENS': True,
 
 }
@@ -104,7 +116,7 @@ CHANNEL_LAYERS = {
         "BACKEND": "channels.layers.InMemoryChannelLayer",
         # "BACKEND": "channels_redis.core.RedisChannelLayer",
         # "CONFIG": {
-        #     "hosts": [(os.getenv('REDIS_URL', 'redis://localhost:6379/1'))],
+        #     "hosts": [(config('REDIS_URL', 'redis://localhost:6379/1'))],
         # },
     },
     # "default": {
@@ -130,12 +142,12 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100MB
 
 DATABASES = {
     'default': {
-        'ENGINE': os.getenv('DB_ENGINE'),
-        'NAME': os.getenv('DB_NAME'),
-        'USER': os.getenv('DB_USER'),
-        'PASSWORD': os.getenv('DB_PASSWORD'),
-        'HOST': os.getenv('DB_HOST'),
-        'PORT': os.getenv('DB_PORT'),
+        'ENGINE': config('DB_ENGINE'),
+        'NAME': config('DB_NAME'),
+        'USER': config('DB_USER'),
+        'PASSWORD': config('DB_PASSWORD'),
+        'HOST': config('DB_HOST'),
+        'PORT': config('DB_PORT'),
     }
 }
 
