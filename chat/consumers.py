@@ -1,3 +1,4 @@
+from datetime import timezone
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
@@ -5,6 +6,7 @@ from django.contrib.auth.models import AnonymousUser
 from .models import Chat, Message, MessageReaction, PinnedMessage
 from channels.middleware import BaseMiddleware
 from channels.db import database_sync_to_async
+from django.db import models
 from rest_framework.authtoken.models import Token
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -63,13 +65,24 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     'message_id': str(message.id),
                     'status': 'delivered'
                 }))
-                
+                lastmessage = await self.message_to_json(message)
                 # Broadcast to group
                 await self.channel_layer.group_send( self.room_group_name,
                 {
                     'type': 'chat_message',
-                    'message': await self.message_to_json(message)
+                    'message': lastmessage
                 })
+                # Broadcast chat update to both users' chat lists
+                chat = await self.get_chat()
+                for user in [chat.user1, chat.user2]:
+                    await self.channel_layer.group_send(
+                        f"user_{user.id}",
+                        {
+                            "type": "chat_update",
+                            "chat": await self.chat_to_json(chat,lastmessage)
+                        }
+                    )
+                # await self.notify_chat_list_update(message.chat)
         except Exception as e:
             await self.send(text_data=json.dumps({
                 'type': 'error',
@@ -77,6 +90,26 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 'error': str(e)
             }))
 
+       # Add this new method
+    async def notify_chat_list_update(self, chat):
+        # Send update to both users' personal channels
+        for user in [chat.user1, chat.user2]:
+            await self.channel_layer.group_send(
+                f"user_{user.id}_chats",
+                {
+                    'type': 'chat_updated',
+                    'chat_id': str(chat.id),
+                    'last_message': await self.message_to_json(chat.messages.last())
+                }
+            )
+       # Add this new handler
+    async def chat_updated(self, event):
+        # This will be used for user-specific notifications
+        await self.send(text_data=json.dumps({
+            'action': 'chat_updated',
+            'chat_id': event['chat_id'],
+            'last_message': event['last_message']
+        }))
     async def handle_typing(self):
         await self.channel_layer.group_send(
             self.room_group_name,
@@ -187,6 +220,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
         ).filter(models.Q(user1=self.user) | models.Q(user2=self.user)).exists()
 
     @database_sync_to_async
+    def get_chat(self):
+        return Chat.objects.get(id=self.chat_id)
+
+    @database_sync_to_async
     def create_message(self, content, content_type):
         chat = Chat.objects.get(id=self.chat_id)
         if chat.requires_acceptance and not chat.is_accepted:
@@ -233,3 +270,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'read': bool(message.read_at)
         }
     
+    @database_sync_to_async
+    def chat_to_json(self, chat, lastmessage):
+        return {
+            'id': str(chat.id),
+            'last_message': lastmessage,
+            # chat.messages.last().content if chat.messages.exists() else None,
+            'last_activity': str(chat.last_activity),
+            # 'unread_count': 0
+            # chat.messages.filter(read_at__isnull=True).exclude(sender=self.user).count()
+        }

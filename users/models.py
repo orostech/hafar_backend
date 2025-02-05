@@ -12,8 +12,7 @@ from django.core.exceptions import ValidationError
 from django.utils.text import slugify
 
 from .countries_states import COUNTRY_CHOICES, NIGERIA_STATES
-
-from .const import ( ACCOUNT_STATUS_CHOICES, BODY_TYPE_CHOICES, COMPLEXION_CHOICES, DIETARY_PREFERENCES_CHOICES, DO_YOU_HAVE_PETS_CHOICES, DRINKING_CHOICES, GENDER_CHOICES, INTEREST_CATEGORIES, INTEREST_IN_CHOICES, RELATIONSHIP_CHOICES, RELATIONSHIP_STATUS_CHOICES, SMOKING_CHOICES, USER_TYPE_CHOICES, VERIFICATION_STATUS_CHOICES, VISIBILITY_CHOICES)
+from .const import ( ACCOUNT_STATUS_CHOICES, BODY_TYPE_CHOICES, COMPLEXION_CHOICES, DIETARY_PREFERENCES_CHOICES, DO_YOU_HAVE_KIDS_CHOICES, DO_YOU_HAVE_PETS_CHOICES, DRINKING_CHOICES, GENDER_CHOICES, INTEREST_CATEGORIES, INTEREST_IN_CHOICES, RELATIONSHIP_CHOICES, RELATIONSHIP_STATUS_CHOICES, SMOKING_CHOICES, USER_TYPE_CHOICES, VERIFICATION_STATUS_CHOICES, VISIBILITY_CHOICES)
 
 # def generate_unique_username(email, display_name=''):
 #     """Generate a unique username based on email, first name, and last name."""
@@ -124,6 +123,14 @@ class User(AbstractUser, PermissionsMixin):
     def __str__(self):
         return f"{self.username}"
 
+    @property
+    def get_profile_photo(self):
+        photo = self.photos.filter(is_primary=True).first()
+        if photo:
+            if not photo.image:
+                return photo.image_url
+            return photo.image.url
+        return None
 class Profile(models.Model):
     # Basic Information
     user = models.OneToOneField( settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile')
@@ -181,7 +188,7 @@ class Profile(models.Model):
     # Lifestyle
     body_type = models.CharField(max_length=2, choices=BODY_TYPE_CHOICES, default='AV')
     complexion = models.CharField(max_length=2, choices=COMPLEXION_CHOICES, default='MD')
-    number_of_kids = models.PositiveIntegerField(null=True, blank=True)
+    do_you_have_kids = models.CharField(choices=DO_YOU_HAVE_KIDS_CHOICES, default='D')
     do_you_have_pets = models.CharField(max_length=1, choices=DO_YOU_HAVE_PETS_CHOICES, default='D')
     weight = models.PositiveIntegerField(null=True, blank=True, help_text="Weight in kilograms (kg)")
     height = models.PositiveIntegerField(null=True, blank=True, help_text="Height in centimeters (cm)")
@@ -319,7 +326,8 @@ class Profile(models.Model):
         ]
         completed = sum(1 for field in required_fields if field)
         return completed / len(required_fields)
-
+    
+ 
     # @property
     # def age(self):
     #     return (timezone.now().date() - self.birthdate).days // 365
