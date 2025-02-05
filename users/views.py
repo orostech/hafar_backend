@@ -226,12 +226,17 @@ class ProfileViewSet(viewsets.ModelViewSet):
         Handle the update for the user's own profile.
         """
         profile = self.request.user.profile
+        print( request.FILES.getlist('images'));
         # self.object = self.get_object()
         serializer = CurrentUserProfileSerializer(
-            self.object, data=request.data, partial=True)
+            profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
+         # Handle image uploads
+        if 'images' in request.FILES:
+            for image in request.FILES.getlist('images'):
+                UserPhoto.objects.create(user=request.user, image=image)
 
+        self.perform_update(serializer)
         return Response(serializer.data)
 
     @action(detail=False, methods=['GET'])

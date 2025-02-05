@@ -52,6 +52,13 @@ DO_YOU_HAVE_PETS_CHOICES = [
     ('A', 'I would like to have pets one day'),
 ]
 
+DO_YOU_HAVE_KIDS_CHOICES = [
+    ('Y', 'Yes, I have kids'),
+    ('N', 'No, I don’t have kids'),
+    ('D', 'I don’t like kids'),
+    ('A', 'I would like to have kids one day'),
+]
+
 SMOKING_CHOICES = [
     ('Y', 'Yes, I smoke'),
     ('N', 'No, I don’t smoke'),

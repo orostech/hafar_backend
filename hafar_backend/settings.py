@@ -33,7 +33,8 @@ INSTALLED_APPS = [
     'chat',
     'users',
     'match',
-    'config'
+    'config',
+    'notification'
 
 ]
 

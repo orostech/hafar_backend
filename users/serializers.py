@@ -109,7 +109,7 @@ class ProfileSerializer(serializers.ModelSerializer):
              # Information Level 1
             'id', 'old_id', 'username', 'display_name', 'bio', 'date_of_birth', 'gender', 'last_seen',
              # Information Level 2
-            'interests', 'relationship_goal', 'interested_in',   'body_type',   'complexion', 'number_of_kids', 'do_you_have_pets', 'weight', 'height', 'dietary_preferences', 'smoking',
+            'interests', 'relationship_goal', 'interested_in',   'body_type',   'complexion', 'do_you_have_kids', 'do_you_have_pets', 'weight', 'height', 'dietary_preferences', 'smoking',
             'drinking', 'relationship_status', 'instagram_handle', 'facebook_link',
             # Information Level 3
             'latitude', 'longitude', 'address', 'state', 'country', 'profile_visibility', 'show_online_status', 'show_distance',
@@ -139,7 +139,7 @@ class ProfileDetailSerializer(serializers.ModelSerializer):
         model = Profile
         fields = ('id', 'username', 'display_name', 'bio', 'date_of_birth', 'gender', 'body_type',
                   'user_type', 'is_verified', 'user_status', 'relationship_goal', 'interested_in',
-                  'complexion', 'number_of_kids', 'do_you_have_pets', 'weight', 'height',
+                  'complexion', 'do_you_have_kids', 'do_you_have_pets', 'weight', 'height',
                   'dietary_preferences', 'smoking', 'drinking', 'relationship_status',
                   'instagram_handle', 'facebook_link', 'created_at', 'updated_at', 'last_seen')
         read_only_fields = ('user', 'created_at', 'updated_at', 'last_seen')
@@ -178,7 +178,7 @@ class CurrentUserProfileSerializer(serializers.ModelSerializer):
             # Information Level 1
             'id', 'old_id', 'username', 'display_name', 'bio', 'date_of_birth', 'gender', 'phone', 'email_verified', 'phone_verified', 'device_token', 'created_at', 'updated_at', 'last_seen',
             # Information Level 2
-            'interests', 'relationship_goal', 'interested_in',   'body_type',   'complexion', 'number_of_kids', 'do_you_have_pets', 'weight', 'height', 'dietary_preferences', 'smoking',
+            'interests','profession', 'relationship_goal', 'interested_in',   'body_type',   'complexion', 'do_you_have_kids', 'do_you_have_pets', 'weight', 'height', 'dietary_preferences', 'smoking',
             'drinking', 'relationship_status', 'instagram_handle',   'facebook_link',
             # Information Level 3
             'latitude', 'longitude', 'address', 'state', 'country', 'selected_address', 'selected_state', 'selected_country', 'selected_lga', 'profile_visibility', 'show_online_status', 'show_distance',
