@@ -51,37 +51,52 @@ MIDDLEWARE = [
     # 'users.middleware.UpdateLastSeenMiddleware',
 ]
 
+
+
+# DigitalOcean Spaces Configuration (for both static and media files) 
+AWS_ACCESS_KEY_ID = config('DO_SPACES_KEY')
+AWS_SECRET_ACCESS_KEY = config('DO_SPACES_SECRET')
+AWS_STORAGE_BUCKET_NAME = config('DO_SPACES_BUCKET')
+AWS_S3_ENDPOINT_URL = config('DO_SPACES_ENDPOINT')
+AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
+AWS_S3_CUSTOM_DOMAIN = config('DO_SPACES_CUSTOM_DOMAIN')
+
+
+
+
+# Static files configuration
 if not DEBUG:
     # Production settings
-    # Use django-storages and boto3 for Amazon S3
-    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-    STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-
-        
-    AWS_ACCESS_KEY_ID = config('DO_SPACES_KEY')
-    AWS_SECRET_ACCESS_KEY = config('DO_SPACES_SECRET')
-    AWS_STORAGE_BUCKET_NAME = config('DO_SPACES_BUCKET')
-    AWS_S3_ENDPOINT_URL = config('DO_SPACES_ENDPOINT')
-    AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
-    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-
-    AWS_S3_CUSTOM_DOMAIN = config('DO_SPACES_CUSTOM_DOMAIN')
-    STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/static/'
-    MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
+    STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+        "OPTIONS": {
+                "access_key": AWS_ACCESS_KEY_ID,
+                "secret_key": AWS_SECRET_ACCESS_KEY,
+                "bucket_name": AWS_STORAGE_BUCKET_NAME,
+                "location": "media",  # Optional: where to store in the bucket
+            },
+    },
+    "staticfiles": {
+        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+        "OPTIONS": {
+                "access_key": AWS_ACCESS_KEY_ID,
+                "secret_key": AWS_SECRET_ACCESS_KEY,
+                "bucket_name": AWS_STORAGE_BUCKET_NAME,
+                "location": "static", 
+            },
+    },
+}
+    STATIC_URL = f'{AWS_S3_CUSTOM_DOMAIN}/static/'
+    MEDIA_URL = f'{AWS_S3_CUSTOM_DOMAIN}/media/'
 else:
     STATIC_URL = '/static/'
     MEDIA_URL = '/media/'
 
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.1/howto/static-files/
-
-# STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
-
-# Media files (Uploaded files)
-# MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 
 
 ROOT_URLCONF = 'hafar_backend.urls'
