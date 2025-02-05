@@ -219,6 +219,20 @@ class ProfileViewSet(viewsets.ModelViewSet):
         profile = self.request.user.profile
         serializer = CurrentUserProfileSerializer(profile)
         return Response(serializer.data)
+    
+    @action(detail=False, methods=['POST'])
+    def updateme(self, request, *args, **kwargs):
+        """
+        Handle the update for the user's own profile.
+        """
+        profile = self.request.user.profile
+        # self.object = self.get_object()
+        serializer = CurrentUserProfileSerializer(
+            self.object, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        return Response(serializer.data)
 
     @action(detail=False, methods=['GET'])
     def recommended_matches(self, request):
