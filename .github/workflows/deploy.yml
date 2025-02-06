@@ -24,4 +24,4 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no hafar@64.23.169.164 "bash /home/hafar/hafar_backend/deploy.sh"
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.MABS_TOKEN }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
