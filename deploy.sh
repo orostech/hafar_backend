@@ -1,16 +1,41 @@
 #!/bin/bash
 
-# Step 1: Activate virtual environment
-source venv/bin/activate
+# Exit immediately if a command exits with a non-zero status
+set -e
 
-# Step 2: Install dependencies
+# Define variables
+PROJECT_DIR=/home/hafar/hafar_backend
+VENV_DIR=$PROJECT_DIR/venv
+
+# Navigate to the project directory
+cd $PROJECT_DIR || exit
+
+# Pull the latest code from the repository
+echo "Pulling latest code..."
+git pull origin main
+
+# Activate the virtual environment
+echo "Activating virtual environment..."
+source $VENV_DIR/bin/activate
+
+# Install dependencies
+echo "Installing dependencies..."
 pip install -r requirements.txt
 
-# Step 3: Collect static files
-python manage.py collectstatic --noinput
-
-# Step 4: Apply database migrations
+# Apply database migrations
+echo "Applying database migrations..."
 python manage.py migrate
 
-# Step 5: Start the application (optional)
-daphne hafar_backend.asgi:application --bind 0.0.0.0:8000 &
+# Collect static files
+echo "Collecting static files..."
+python manage.py collectstatic --noinput
+
+# Restart Daphne or Gunicorn service
+echo "Restarting Daphne service..."
+sudo systemctl restart daphne
+
+# Restart Nginx
+echo "Restarting Nginx..."
+sudo systemctl restart nginx
+
+echo "Deployment complete!"
