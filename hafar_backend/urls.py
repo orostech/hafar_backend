@@ -22,6 +22,7 @@ apipatterns = [
 
 
 urlpatterns = [
+    path("", APIRootView.as_view(), name='api-root'),
     path('admin/', admin.site.urls),
     path('', include(apipatterns)),
 ]
