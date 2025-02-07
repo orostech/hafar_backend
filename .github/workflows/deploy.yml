@@ -1,27 +1,27 @@
-name: Deploy to DigitalOcean Droplet
+# name: Deploy to DigitalOcean Droplet
 
-on:
-  push:
-    branches:
-      - main
+# on:
+#   push:
+#     branches:
+#       - main
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v3
 
-      - name: Set up SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H 64.23.169.164 >> ~/.ssh/known_hosts
+#       - name: Set up SSH
+#         run: |
+#           mkdir -p ~/.ssh
+#           echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_ed25519
+#           chmod 600 ~/.ssh/id_ed25519
+#           ssh-keyscan -H 64.23.169.164 >> ~/.ssh/known_hosts
 
-      - name: Deploy to Droplet
-        run: |
-           ssh -o StrictHostKeyChecking=no hafar@64.23.169.164 "bash /home/hafar/hafar_backend/deploy.sh"
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+#       - name: Deploy to Droplet
+#         run: |
+#            ssh -o StrictHostKeyChecking=no hafar@64.23.169.164 "bash /home/hafar/hafar_backend/deploy.sh"
+#         env:
+#           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
