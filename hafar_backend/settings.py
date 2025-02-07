@@ -75,7 +75,7 @@ if not DEBUG:
                 "access_key": AWS_ACCESS_KEY_ID,
                 "secret_key": AWS_SECRET_ACCESS_KEY,
                 "bucket_name": AWS_STORAGE_BUCKET_NAME,
-                "location": "hafar/media",  # Optional: where to store in the bucket
+                "location": "media",  # Optional: where to store in the bucket
             },
     },
     "staticfiles": {

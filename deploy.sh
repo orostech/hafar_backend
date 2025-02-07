@@ -26,9 +26,9 @@ pip install -r requirements.txt
 echo "Applying database migrations..."
 python manage.py migrate
 
-# Collect static files
-echo "Collecting static files..."
-python manage.py collectstatic --noinput
+# # Collect static files
+# echo "Collecting static files..."
+# python manage.py collectstatic --noinput
 
 # Restart Daphne or Gunicorn service
 echo "Restarting Daphne service..."
