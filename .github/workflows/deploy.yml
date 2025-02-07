@@ -3,7 +3,7 @@ name: Deploy to DigitalOcean Droplet
 on:
   push:
     branches:
-      - main  # Change this to your main branch name if different
+      - main
 
 jobs:
   deploy:
@@ -16,12 +16,12 @@ jobs:
       - name: Set up SSH
         run: |
           mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
+          echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H 64.23.169.164 >> ~/.ssh/known_hosts
 
       - name: Deploy to Droplet
         run: |
-          ssh -o StrictHostKeyChecking=no root@64.23.169.164 "bash /home/hafar/hafar_backend/deploy.sh"
+          ssh -o StrictHostKeyChecking=no hafar@64.23.169.164 "bash /home/hafar/hafar_backend/deploy.sh"
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
