@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Exit immediately if a command exits with a non-zero status
+# Exit immmediately if a command exits with a non-zero status
 set -e
 
 # Define variables
