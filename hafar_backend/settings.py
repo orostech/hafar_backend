@@ -88,8 +88,8 @@ if not DEBUG:
             },
     },
 }
-    STATIC_URL = f'{AWS_S3_CUSTOM_DOMAIN}/static/'
-    MEDIA_URL = f'{AWS_S3_CUSTOM_DOMAIN}/media/'
+    STATIC_URL = f'{AWS_S3_CUSTOM_DOMAIN}/hafar/static/'
+    MEDIA_URL = f'{AWS_S3_CUSTOM_DOMAIN}/hafar/media/'
 else:
     STATIC_URL = '/static/'
     MEDIA_URL = '/media/'
