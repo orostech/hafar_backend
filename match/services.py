@@ -40,6 +40,7 @@ class MatchingService:
         excluded_users.update(Like.objects.filter(liker=self.user).values_list('liked', flat=True))
         excluded_users.update(Dislike.objects.filter(disliker=self.user).values_list('disliked', flat=True))
         excluded_users.update(UserBlock.objects.filter( Q(user=self.user) | Q(blocked_user=self.user)).values_list('user', 'blocked_user'))
+        print(len(excluded_users))
         
         # # Exclude blocked users, own profile, and inactive/suspended/banned/deactivated users
         base_queryset = Profile.objects.exclude(

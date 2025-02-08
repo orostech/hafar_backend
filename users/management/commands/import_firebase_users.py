@@ -10,6 +10,7 @@ from datetime import date
 # python manage.py import_firebase_users "C:\Users\hp\Documents\Django\hafar backup\firebase_backend_firebase_backup\first_100_users.json"
 # py manage.py import_firebase_users "C:\Users\hp\Documents\Django\hafar backup\firebase_backend_firebase_backup\first_100_users.json"
 
+
 class Command(BaseCommand):
     help = 'Import users and profiles from Firebase JSON backup'
 

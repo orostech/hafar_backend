@@ -12,7 +12,8 @@ cd $PROJECT_DIR || exit
 
 # Pull the latest code from the repository
 echo "Pulling latest code..."
-git pull origin main
+git fetch origin
+git reset --hard origin/main
 
 # Activate the virtual environment
 echo "Activating virtual environment..."
