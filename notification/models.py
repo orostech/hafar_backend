@@ -17,5 +17,8 @@ class Notification(models.Model):
     read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return f"{self.recipient}"
+
     class Meta:
         ordering = ['-created_at']

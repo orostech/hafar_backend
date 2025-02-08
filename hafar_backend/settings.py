@@ -75,7 +75,7 @@ if not DEBUG:
                 "access_key": AWS_ACCESS_KEY_ID,
                 "secret_key": AWS_SECRET_ACCESS_KEY,
                 "bucket_name": AWS_STORAGE_BUCKET_NAME,
-                "location": "media",  # Optional: where to store in the bucket
+                "location": "hafar/media",  # Optional: where to store in the bucket
             },
     },
     "staticfiles": {
@@ -88,8 +88,8 @@ if not DEBUG:
             },
     },
 }
-    STATIC_URL = f'{AWS_S3_CUSTOM_DOMAIN}/hafar/static/'
-    MEDIA_URL = f'{AWS_S3_CUSTOM_DOMAIN}/hafar/media/'
+    # STATIC_URL = f'{AWS_S3_CUSTOM_DOMAIN}/hafar/static/'
+    # MEDIA_URL = f'{AWS_S3_CUSTOM_DOMAIN}/hafar/media/'
 else:
     STATIC_URL = '/static/'
     MEDIA_URL = '/media/'

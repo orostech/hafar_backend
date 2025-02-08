@@ -1,8 +1,9 @@
 # match/views.py
+from math import radians, sin, cos, sqrt, atan2
 from datetime import timedelta
 import logging
 from django.db import transaction
-from rest_framework import viewsets, status,pagination
+from rest_framework import viewsets, status, pagination
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -23,6 +24,7 @@ logger = logging.getLogger(__name__)
 DAILY_LIKE_LIMIT = 30
 DAILY_SUPER_LIKE_LIMIT = 5
 
+
 def get_swipe_limits(user):
     cache_key = f'swipe_limits_{user.id}'
     limits = cache.get(cache_key)
@@ -31,9 +33,10 @@ def get_swipe_limits(user):
         cache.set(cache_key, limits, timeout=60*5)  # Cache for 5 minutes
     return limits
 
-from math import radians, sin, cos, sqrt, atan2
 
 # Add this helper function at the top of views.py
+
+
 def calculate_distance(lat1, lon1, lat2, lon2):
     """Calculate distance between two coordinates in kilometers using Haversine formula."""
     if None in [lat1, lon1, lat2, lon2]:
@@ -56,11 +59,12 @@ def calculate_distance(lat1, lon1, lat2, lon2):
     radius = 6371.0
     return radius * c
 
+
 class MatchActionViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = Match.objects.all()
-    serializer_class = MatchSerializer 
-    
+    serializer_class = MatchSerializer
+
     def get_serializer_class(self):
         if self.action in ['like', 'super_like']:
             return LikeSerializer
@@ -68,33 +72,34 @@ class MatchActionViewSet(viewsets.ModelViewSet):
             return DislikeSerializer
         return MatchSerializer
 
-
     @action(detail=False, methods=['POST'])
     def like(self, request):
         try:
             liked_user_id = request.data.get('liked')
             like_type = request.data.get('like_type', 'REGULAR').upper()
-            user= request.user 
-
+            user = request.user
+            print('move 1')
             # Input validation
             if not liked_user_id:
-                return Response({'error': 'Liked user ID is required'}, 
+                return Response({'error': 'Liked user ID is required'},
                               status=status.HTTP_400_BAD_REQUEST)
             if user.id == liked_user_id:
                 return Response({'error': 'Cannot like yourself'},
                             status=status.HTTP_400_BAD_REQUEST)
-            
+
             if like_type not in [choice[0] for choice in Like.LIKE_TYPES]:
                 return Response({'error': 'Invalid like type'},
                               status=status.HTTP_400_BAD_REQUEST)
-            
+
             with transaction.atomic():
-                # Lock swipe limit for atomic update
-                swipe_limit =  SwipeLimit.objects.select_for_update().get_or_create(
-                    user=user
-                )[0]
+                # # Lock swipe limit for atomic update
+                # swipe_limit =  SwipeLimit.objects.select_for_update().get_or_create(
+                #     user=user
+                # )[0]
+                # swipe_limit.reset_if_needed()
+                  # Ensure swipe limit exists and reset if needed
+                swipe_limit, created = SwipeLimit.objects.select_for_update().get_or_create(user=user)
                 swipe_limit.reset_if_needed()
-                 #  SwipeLimit.objects.get_or_create(user=user)
 
                 # Check limits
                 if like_type == 'SUPER' and swipe_limit.daily_super_likes_count >= DAILY_SUPER_LIKE_LIMIT:
@@ -107,7 +112,7 @@ class MatchActionViewSet(viewsets.ModelViewSet):
                         {'error': 'Daily like limit reached'},
                         status=status.HTTP_429_TOO_MANY_REQUESTS
                     )
-                
+                print('move 2')
                 # Prevent duplicate active likes
                 if Like.objects.filter(
                     liker=user, 
@@ -116,20 +121,20 @@ class MatchActionViewSet(viewsets.ModelViewSet):
                 ).exists():
                     return Response({'error': 'Already liked this user'},
                                   status=status.HTTP_400_BAD_REQUEST)
-
+                print('move 22')
                 # Remove any existing dislikes
                 Dislike.objects.filter(
                     disliker=user,
                     disliked_id=liked_user_id
                 ).delete()
-
+                print('move 22')
                 # Create the like
                 like = Like.objects.create(
                     liker=request.user,
                     liked_id=liked_user_id,
                     like_type=like_type
                 )
-
+                print('move 3')
                  # Check for mutual like
                 mutual_like = Like.objects.filter(
                     liker_id=liked_user_id,
@@ -154,7 +159,7 @@ class MatchActionViewSet(viewsets.ModelViewSet):
                 else:
                     swipe_limit.daily_likes_count += 1
                 swipe_limit.save()
-
+                print('move 4')
                 return Response({
                 'match_created': mutual_like,
                 'remaining_likes': DAILY_LIKE_LIMIT - swipe_limit.daily_likes_count,
@@ -165,6 +170,8 @@ class MatchActionViewSet(viewsets.ModelViewSet):
             logger.error(f"Like error for user {user.id}: {str(e)}")
             return Response({'error': 'Internal server error'},
                           status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 
     @action(detail=False, methods=['POST'])
     def dislike(self, request):

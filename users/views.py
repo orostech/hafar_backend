@@ -49,7 +49,9 @@ class RegisterView(views.APIView):
             return Response({
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
-                'user': profile_data
+                **profile_data  # Unpack profile_data into the main dictionary
+      
+                # 'user': profile_data
                 # serializer.data
             }, status=status.HTTP_201_CREATED)
         

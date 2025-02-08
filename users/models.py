@@ -147,15 +147,15 @@ class Profile(models.Model):
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
     address = models.CharField(max_length=255, blank=True)
-    state = models.CharField(max_length=100, blank=True)
+    state = models.CharField(max_length=100, blank=True,null=True,)
     country = models.CharField(max_length=100, blank=True)
  
 
     # Current Location Field
-    selected_address = models.CharField(max_length=255, blank=True)
-    selected_state = models.CharField(max_length=100, blank=True, choices=NIGERIA_STATES)
-    selected_country = models.CharField(max_length=100, blank=True, choices=COUNTRY_CHOICES)
-    selected_lga = models.CharField(max_length=100, blank=True)
+    selected_address = models.CharField(max_length=255, blank=True, null=True)
+    selected_state = models.CharField(max_length=100, choices=NIGERIA_STATES, null=True)
+    selected_country = models.CharField(max_length=100, blank=True, choices=COUNTRY_CHOICES,  default= 'NG')
+    selected_lga = models.CharField(max_length=100, blank=True,null=True)
 
     # Account Details
     user_type = models.CharField(max_length=1, choices=USER_TYPE_CHOICES, default='S')
