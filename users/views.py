@@ -43,15 +43,14 @@ class RegisterView(views.APIView):
             # Generate tokens
             refresh = RefreshToken.for_user(user)
             profile = user.profile
-            print(profile)
             profile_data = CurrentUserProfileSerializer(profile).data
-            print(profile_data)
+           
             return Response({
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
                 **profile_data  # Unpack profile_data into the main dictionary
       
-                # 'user': profile_data
+               
                 # serializer.data
             }, status=status.HTTP_201_CREATED)
         
@@ -70,16 +69,12 @@ class LoginView(views.APIView):
             )
             if user:
                 refresh = RefreshToken.for_user(user)
-                # profile_data = ProfileSerializer
+                profile = user.profile
+                profile_data = CurrentUserProfileSerializer(profile).data
                 return Response({
                     'refresh': str(refresh),
                     'access': str(refresh.access_token),
-                    'user': {
-                        'id': user.id,
-                        'email': user.email,
-                        'first_name': user.first_name,
-                        'last_name': user.last_name
-                    }
+                    **profile_data  # Unpack profile_data into the main dictionary
                 })
             return Response({
                 'error': 'Invalid credentials'

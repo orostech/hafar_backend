@@ -255,7 +255,8 @@ class MatchActionViewSet(viewsets.ModelViewSet):
     def potential_matches(self, request):
         """Get potential matches based on preferences and matching algorithm"""
         matching_service = MatchingService(request.user)
-        potential_matches = matching_service.get_potential_matches(limit=100)  
+        potential_matches = matching_service.get_potential_matches(limit=100) 
+        print(f'see {len(potential_matches)}') 
         paginator = pagination.PageNumberPagination()  
         result_page = paginator.paginate_queryset(potential_matches, request)
         serializer = ProfileMinimalSerializer(result_page, many=True)

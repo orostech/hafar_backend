@@ -17,8 +17,9 @@ class UserAdmin(admin.ModelAdmin):
 class ProfileAdmin(admin.ModelAdmin):
     list_display = ('user', 'display_name', 'gender', 'date_of_birth', 'user_status')
     search_fields = ('user__username', 'display_name')
-    list_filter = ('gender', 'user_status', 'is_verified', 'user_type')
+    list_filter = ('gender', 'user_status', 'is_verified', 'user_type', 'created_at')
     filter_horizontal = ('interests',)
+    readonly_fields = ('updated_at', 'created_at')
 
 @admin.register(UserPhoto)
 class UserPhotoAdmin(admin.ModelAdmin):
