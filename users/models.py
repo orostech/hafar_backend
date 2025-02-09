@@ -133,7 +133,7 @@ class User(AbstractUser, PermissionsMixin):
         return None
 class Profile(models.Model):
     # Basic Information
-    user = models.OneToOneField( settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile')
+    user = models.OneToOneField(settings.AUTH_USER_MODEL,primary_key=true, on_delete=models.CASCADE, related_name='profile')
     display_name = models.CharField(max_length=20, default='Unknown')
     bio = models.TextField(blank=True)
     date_of_birth  = models.DateField(null=True)

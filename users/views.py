@@ -143,6 +143,7 @@ class UserRegisterView(generics.CreateAPIView):
     permission_classes = [AllowAny]
 
 class ProfileViewSet(viewsets.ModelViewSet):
+    queryset = Profile.objects.all()
     serializer_class = ProfileMinimalSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [filters.SearchFilter]
@@ -152,64 +153,64 @@ class ProfileViewSet(viewsets.ModelViewSet):
         if self.action == 'me':
             return ProfileDetailSerializer
         if self.action == 'retrieve':
-            return ProfileDetailSerializer
+            return ProfileSerializer
         return super().get_serializer_class()
 
     def get_queryset(self):
-        user = self.request.user
-        try:
-            user_profile = Profile.objects.get(user=user)
-        except Profile.DoesNotExist:
-            raise exceptions.NotFound('User profile does not exist')
-        # Get blocked users
-        blocked_users = UserBlock.objects.filter(
-            Q(user=user) | Q(blocked_user=user)
-        ).values_list('user', 'blocked_user')
-        blocked_ids = set()
-        for block in blocked_users: 
-            blocked_ids.update(block)
+        # user = self.request.user
+        # try:
+        #     user_profile = Profile.objects.get(user=user)
+        # except Profile.DoesNotExist:
+        #     raise exceptions.NotFound('User profile does not exist')
+        # # Get blocked users
+        # blocked_users = UserBlock.objects.filter(
+        #     Q(user=user) | Q(blocked_user=user)
+        # ).values_list('user', 'blocked_user')
+        # blocked_ids = set()
+        # for block in blocked_users: 
+        #     blocked_ids.update(block)
   
 
-        # Exclude blocked users, own profile, and inactive/suspended/banned/deactivated users
-        base_queryset = Profile.objects.exclude(
-            Q(user__id__in=blocked_ids) | 
-            Q(user=user) | 
-            Q(user_status__in=['IA', 'S', 'B', 'D'])  # Exclude inactive, suspended, banned, and deactivated users
-        )
+        # # Exclude blocked users, own profile, and inactive/suspended/banned/deactivated users
+        # base_queryset = Profile.objects.exclude(
+        #     Q(user__id__in=blocked_ids) | 
+        #     Q(user=user) | 
+        #     Q(user_status__in=['IA', 'S', 'B', 'D'])  # Exclude inactive, suspended, banned, and deactivated users
+        # )
         
-        # Apply filters based on user preferences
-        queryset = base_queryset
+        # # Apply filters based on user preferences
+        # queryset = base_queryset
 
-        # Gender preference - only filter if interested_in is not 'Everyone'
-        if user_profile.interested_in != 'E':
-            queryset = queryset.filter(gender=user_profile.interested_in)
+        # # Gender preference - only filter if interested_in is not 'Everyone'
+        # if user_profile.interested_in != 'E':
+        #     queryset = queryset.filter(gender=user_profile.interested_in)
 
-        # Apply age range filtering
-        queryset = queryset.filter(
-            date_of_birth__gte=date.today() - relativedelta(years=user_profile.maximum_age_preference),
-            date_of_birth__lte=date.today() - relativedelta(years=user_profile.minimum_age_preference)
-        )
+        # # Apply age range filtering
+        # queryset = queryset.filter(
+        #     date_of_birth__gte=date.today() - relativedelta(years=user_profile.maximum_age_preference),
+        #     date_of_birth__lte=date.today() - relativedelta(years=user_profile.minimum_age_preference)
+        # )
         
-        # Filter by profile visibility
-        queryset = queryset.filter(profile_visibility='VE')  # Visible to Everyone
+        # # Filter by profile visibility
+        # queryset = queryset.filter(profile_visibility='VE')  # Visible to Everyone
 
-        # Order by verification status, putting verified users first
-        queryset = queryset.order_by(
-            F('is_verified').desc(),  # Place verified users first
-            'created_at'  # Secondary ordering can be adjusted as needed
-        )
+        # # Order by verification status, putting verified users first
+        # queryset = queryset.order_by(
+        #     F('is_verified').desc(),  # Place verified users first
+        #     'created_at'  # Secondary ordering can be adjusted as needed
+        # )
 
-        # # Location-based filtering if coordinates are available
-        # if user_profile.latitude and user_profile.longitude:
-        #     queryset = queryset.annotate(
-        #         distance=((F('latitude') - user_profile.latitude) ** 2 + 
-        #                  (F('longitude') - user_profile.longitude) ** 2) ** 0.5
-        #     ).filter(
-        #         distance__lte=user_profile.maximum_distance_preference / 111.0  # Rough km to degree conversion
-        #     ).order_by('distance')
+        # # # Location-based filtering if coordinates are available
+        # # if user_profile.latitude and user_profile.longitude:
+        # #     queryset = queryset.annotate(
+        # #         distance=((F('latitude') - user_profile.latitude) ** 2 + 
+        # #                  (F('longitude') - user_profile.longitude) ** 2) ** 0.5
+        # #     ).filter(
+        # #         distance__lte=user_profile.maximum_distance_preference / 111.0  # Rough km to degree conversion
+        # #     ).order_by('distance')
 
-        return queryset
-        # return Profile.objects.all()
+        # return queryset
+        return Profile.objects.all()
 
     @action(detail=False, methods=['GET'])
     def me(self, request):
