@@ -11,29 +11,19 @@ from .models import (
 User = get_user_model()
 
 
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ('id', 'email', 'username', 'first_name', 'last_name',
-                  'phone', 'email_verified', 'phone_verified')
-        read_only_fields = ('email_verified', 'phone_verified','created_at')
+# class UserSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = User
+#         fields = ('id', 'email', 'username', 'first_name', 'last_name',
+#                   'phone', 'email_verified', 'phone_verified')
+#         read_only_fields = ('email_verified', 'phone_verified','created_at')
         
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
-    # confirm_password = serializers.CharField(write_only=True)
-
     class Meta:
         model = User
-        fields = ('email', 'password',
-                  #   'confirm_password',
-                  #   'first_name',
-                  #  'last_name', 'phone'
-                  )
+        fields = ('email', 'password', )
 
-    # def validate(self, data):
-    #     if data['password'] != data['confirm_password']:
-    #         raise serializers.ValidationError("Passwords don't match")
-    #     return data
 
     def create(self, validated_data):
         # validated_data.pop('confirm_password')
@@ -56,7 +46,7 @@ class UserPhotoSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserPhoto
         fields = ('id', 'image', 'is_primary', 'order', 'caption',
-                  'created_at', 'updated_at')
+                  'created_at', 'updated_at'           )
         read_only_fields = ('created_at', 'updated_at')
 
 
@@ -81,51 +71,6 @@ class VideoPreferenceSerializer(serializers.ModelSerializer):
     class Meta:
         model = VideoPreference
         fields = ('id', 'autoplay_videos', 'video_quality', 'save_to_device')
-
-
-class ProfileSerializer(serializers.ModelSerializer):
-    id = serializers.ReadOnlyField(source='user.id')
-    username = serializers.CharField(source='user.username', read_only=True)
-    old_id = serializers.ReadOnlyField(source='user.old_id')
-    # id = serializers.ReadOnlyField(source='user.id')
-    # username = serializers.CharField(source='user.username', read_only=True)
-    # of_interest = serializers.SerializerMethodField()
-    # interests = InterestSerializer(many=True)
-    # photos = UserPhotoSerializer(many=True, read_only=True)
-    # videos = UserVideoSerializer(many=True, read_only=True)
-    # video_preferences = VideoPreferenceSerializer(read_only=True)
-    # average_rating = serializers.FloatField(read_only=True)
-    # relationship_goal = serializers.ChoiceField(
-    #     choice_classes=RELATIONSHIP_CHOICES,
-    #     # source='relationship_goal',
-    #     read_only=True
-    # )
-
-    class Meta:
-        model = Profile
-        fields = (
-             # Information Level 1
-            'id', 'old_id', 'username', 'display_name', 'bio', 'date_of_birth', 'gender', 'last_seen',
-             # Information Level 2
-            'interests', 'relationship_goal', 'interested_in',   'body_type',   'complexion', 'do_you_have_kids', 'do_you_have_pets', 'weight', 'height', 'dietary_preferences', 'smoking',
-            'drinking', 'relationship_status', 'instagram_handle', 'facebook_link',
-            # Information Level 3
-            'latitude', 'longitude', 'address', 'state', 'country', 'profile_visibility', 'show_online_status', 'show_distance',
-            'user_type', 'is_verified',  'user_status','show_last_seen'
-              )
-        read_only_fields = ('user', 'created_at', 'updated_at', 'last_seen')
-
-    def update(self, instance, validated_data):
-        interests_data = validated_data.pop('interests', [])
-        instance = super().update(instance, validated_data)
-
-        if interests_data:
-            instance.interests.clear()
-            for interest_data in interests_data:
-                interest, _ = Interest.objects.get_or_create(**interest_data)
-                instance.interests.add(interest)
-
-        return instance
 
 
 class ProfileDetailSerializer(serializers.ModelSerializer):
@@ -159,6 +104,27 @@ class UserRatingSerializer(serializers.ModelSerializer):
         model = UserRating
         fields = ('id', 'rated_user', 'value', 'created_at')
         read_only_fields = ('created_at',)
+
+class ProfileSerializer(serializers.ModelSerializer):
+    photos = UserPhotoSerializer(many=True, read_only=True)
+    age = serializers.SerializerMethodField()
+    online_status = serializers.SerializerMethodField()
+    distance = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Profile
+        fields = '__all__'
+        read_only_fields = ['user']
+
+    def get_age(self, obj):
+        return obj.get_age()
+
+    def get_online_status(self, obj):
+        return obj.online_status
+
+    def get_distance(self, obj):
+        # Implement distance calculation logic here
+        return None  # Replace with actual calculation
 
 
 class CurrentUserProfileSerializer(serializers.ModelSerializer):
