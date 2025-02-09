@@ -18,8 +18,6 @@ class UserSerializer(serializers.ModelSerializer):
                   'phone', 'email_verified', 'phone_verified')
         read_only_fields = ('email_verified', 'phone_verified','created_at')
         
-
-
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     # confirm_password = serializers.CharField(write_only=True)
