@@ -105,7 +105,7 @@ ROOT_URLCONF = 'hafar_backend.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'], 
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -245,3 +245,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+POSTMARK_API_KEY = '2a3c0088-e7fa-4e6b-95db-00c13af1ac67'
+DEFAULT_FROM_EMAIL = 'hafar.orostech@joinhafar.com'
+FRONTEND_URL = 'https://joinhafar.com'

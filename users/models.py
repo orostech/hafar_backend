@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+import string
 from django.utils import timezone
 import random
 import uuid
@@ -123,7 +124,6 @@ class User(AbstractUser, PermissionsMixin):
     def __str__(self):
         return f"{self.username}"
 
-    @property
     def get_profile_photo(self):
         photo = self.photos.filter(is_primary=True).first()
         if photo:
@@ -169,7 +169,7 @@ class Profile(models.Model):
     show_last_seen = models.BooleanField(default=True)
 
     # Preferences
-    interests = models.ManyToManyField('Interest', blank=True) 
+    # interests = models.ManyToManyField('Interest', blank=True) 
     relationship_goal = models.CharField( max_length=3, choices=RELATIONSHIP_CHOICES, default='NSR')
     interested_in = models.CharField(max_length=6, choices=INTEREST_IN_CHOICES,default='E')
     minimum_age_preference = models.IntegerField(
@@ -231,7 +231,6 @@ class Profile(models.Model):
     def get_age(self):
         if self.date_of_birth:
             return (date.today() - self.date_of_birth).days // 365
-        
         return None
     
     @property
@@ -321,7 +320,7 @@ class Profile(models.Model):
             self.date_of_birth,
             self.latitude,
             self.longitude,
-            self.interests.exists(),
+            # self.interests.exists(),
             self.photos.exists()
         ]
         completed = sum(1 for field in required_fields if field)
@@ -360,12 +359,10 @@ class UserRating(models.Model):
     def __str__(self):
         return f"{self.rating_user.username} rated {self.rated_user.user.username}: {self.value} stars"
     
-class Interest(models.Model):
-    name = models.CharField(max_length=50, choices=INTEREST_CATEGORIES, unique=True)
-
-    def __str__(self):
-
-        return self.name
+# class Interest(models.Model):
+#     name = models.CharField(max_length=50, unique=True, primary_key=True)
+#     def __str__(self):
+#         return self.name
     
 class UserBlock(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='blocks_made')
@@ -539,3 +536,28 @@ class VideoPreference(models.Model):
 
     def __str__(self):
         return f"{self.profile.user.username}'s video preferences"
+
+def generate_otp():
+    # str(random.randint(100000, 999999))
+    code = ''.join(random.choices(string.digits, k=6))
+    print("Generated OTP:", code)
+    return code
+
+class OTP(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='otp')
+    code  = models.CharField(max_length=6,default=generate_otp)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_used = models.BooleanField(default=False)
+    expires_at = models.DateTimeField()
+    def __str__(self):
+        return f"{self.user.username}'s OTP"
+    
+    def save(self, *args, **kwargs):
+        if not self.expires_at:
+            self.expires_at = timezone.now() + timezone.timedelta(minutes=15)
+        super().save(*args, **kwargs)
+
+    def is_valid(self):
+        return not self.is_used and timezone.now() < self.expires_at
+    
+

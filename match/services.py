@@ -5,7 +5,7 @@ from datetime import date, timedelta
 
 from .ml_matching import MLMatchingService
 from .models import Like, Dislike, Match, SwipeLimit, UserPreferenceWeight, UserSwipeAction
-from users.models import Profile, Interest, UserBlock
+from users.models import Profile, UserBlock
 import numpy as np
 from dateutil.relativedelta import relativedelta
 from sklearn.preprocessing import MinMaxScaler
@@ -96,14 +96,14 @@ class MatchingService:
             # Calculate individual scores
             distance_score = self._calculate_distance_score(profile)
             age_score = self._calculate_age_score(profile)
-            interests_score = self._calculate_interests_score(profile)
+            # interests_score = self._calculate_interests_score(profile)
             lifestyle_score = self._calculate_lifestyle_score(profile)
 
             # Calculate weighted average score
             total_score = (
                 distance_score * self.preference_weights.distance_weight +
                 age_score * self.preference_weights.age_weight +
-                interests_score * self.preference_weights.interests_weight +
+                # interests_score * self.preference_weights.interests_weight +
                 lifestyle_score * self.preference_weights.lifestyle_weight
             )
 
@@ -147,18 +147,20 @@ class MatchingService:
 
     def _calculate_interests_score(self, profile):
         """Calculate interests compatibility score"""
-        user_interests = set(
-            self.user_profile.interests.values_list('id', flat=True))
-        profile_interests = set(profile.interests.values_list('id', flat=True))
+        # user_interests = set(
+        #     self.user_profile.interests.values_list('name', flat=True))
+        # # profile_interests = 
+        # # set(profile.interests.values_list('name', flat=True))
 
-        if not user_interests or not profile_interests:
-            return 0.5
+        # # if not user_interests or not profile_interests:
+        # #     return 0.5
 
-        # Jaccard similarity
-        intersection = len(user_interests.intersection(profile_interests))
-        union = len(user_interests.union(profile_interests))
+        # # Jaccard similarity
+        # intersection = len(user_interests.intersection(profile_interests))
+        # union = len(user_interests.union(profile_interests))
 
-        return intersection / union if union > 0 else 0
+        # return intersection / union if union > 0 else 0
+        return 0
 
     def _calculate_lifestyle_score(self, profile):
         """Calculate lifestyle compatibility score"""
@@ -183,7 +185,7 @@ class MatchingService:
             liked_profiles = recent_actions.filter(action__in=['LIKE', 'SUPERLIKE']).aggregate(
                 avg_distance=Avg('target_distance'),
                 avg_age=Avg('target_age'),
-                avg_interests=Avg('common_interests_count'),
+                # avg_interests=Avg('common_interests_count'),
                 avg_lifestyle=Avg('lifestyle_similarity_score')
             )
 
@@ -192,6 +194,6 @@ class MatchingService:
             if total > 0:
                 self.preference_weights.distance_weight = liked_profiles['avg_distance'] / total
                 self.preference_weights.age_weight = liked_profiles['avg_age'] / total
-                self.preference_weights.interests_weight = liked_profiles['avg_interests'] / total
+                # self.preference_weights.interests_weight = liked_profiles['avg_interests'] / total
                 self.preference_weights.lifestyle_weight = liked_profiles['avg_lifestyle'] / total
                 self.preference_weights.save()

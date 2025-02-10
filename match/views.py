@@ -65,6 +65,9 @@ class MatchActionViewSet(viewsets.ModelViewSet):
     queryset = Match.objects.all()
     serializer_class = MatchSerializer
 
+    def get_serializer_context(self):
+        return super().get_serializer_context()+ {'request': self.request}
+
     def get_serializer_class(self):
         if self.action in ['like', 'super_like']:
             return LikeSerializer
@@ -258,8 +261,10 @@ class MatchActionViewSet(viewsets.ModelViewSet):
         potential_matches = matching_service.get_potential_matches(limit=100) 
         print(f'see {len(potential_matches)}') 
         paginator = pagination.PageNumberPagination()  
-        result_page = paginator.paginate_queryset(potential_matches, request)
-        serializer = ProfileMinimalSerializer(result_page, many=True)
+        result_page = paginator.paginate_queryset(potential_matches, request,)
+        serializer = ProfileMinimalSerializer(result_page, many=True, 
+                                            #   context={'request': request}
+                                              )
         # return Response(serializer.data)
         return paginator.get_paginated_response(serializer.data)
 
