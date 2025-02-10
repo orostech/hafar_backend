@@ -7,14 +7,16 @@ from django.db.models import Q, F
 from django.contrib.postgres.search import TrigramSimilarity
 from datetime import date
 from dateutil.relativedelta import relativedelta
-
+from django.shortcuts import render
 from match.serializers import ProfileMinimalSerializer
-from .models import Profile, User, UserPhoto, UserVideo, UserBlock, Interest, UserRating
+from notification.email_service import EmailService
+from .models import OTP, Profile, User, UserPhoto, UserVideo, UserBlock, UserRating
 from .serializers import (
-    CurrentUserProfileSerializer, ProfileDetailSerializer, ProfileSerializer, UserPhotoSerializer, RegisterSerializer, UserVideoSerializer,
-    UserBlockSerializer, InterestSerializer, UserRatingSerializer
+    CurrentUserProfileSerializer, PasswordResetConfirmSerializer, PasswordResetRequestSerializer, PasswordResetVerifySerializer, ProfileSerializer, UserPhotoSerializer, RegisterSerializer, UserVideoSerializer,
+    UserBlockSerializer, UserRatingSerializer
 )
 # auth_views.py
+from django.contrib.auth.hashers import make_password
 from rest_framework import status, views
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
@@ -26,35 +28,93 @@ from django.template.loader import render_to_string
 from django.utils.crypto import get_random_string
 from .serializers import RegisterSerializer, LoginSerializer
 from .models import Profile
+from match.models import Visit
 
+class PasswordResetRequestView(views.APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        if serializer.is_valid():
+            email = serializer.validated_data['email']
+            user = User.objects.get(email=email)            
+            # Create or update OTP
+            OTP.objects.filter(user=user).delete()  # Invalidate previous OTPs
+            otp = OTP.objects.create(user=user)
+            
+            # Send OTP via email
+            EmailService().send_password_reset_otp(user, otp.code)
+            
+            return Response({"message": "OTP sent to your email."}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class PasswordResetVerifyView(views.APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = PasswordResetVerifySerializer(data=request.data)
+        if serializer.is_valid():
+            email = serializer.validated_data['email']
+            code = serializer.validated_data['code']
+            
+            user = User.objects.get(email=email)
+            otp = OTP.objects.filter(user=user, code=code).first()
+            if otp and otp.is_valid():
+                return Response({"message": "OTP verified."}, status=status.HTTP_200_OK)
+            return Response({"error": "Invalid or expired OTP."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class PasswordResetConfirmView(views.APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        if serializer.is_valid():
+            email = serializer.validated_data['email']
+            code = serializer.validated_data['code']
+            new_password = serializer.validated_data['new_password']
+            
+            user = User.objects.get(email=email)
+            otp =  OTP.objects.filter(user=user, code=code).first()
+            
+            if otp and otp.is_valid():
+                user.password = make_password(new_password)
+                user.save()
+                otp.is_used = True
+                otp.save()
+                return Response({"message": "Password reset successfully."}, status=status.HTTP_200_OK)
+            return Response({"error": "Invalid or expired OTP."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 class RegisterView(views.APIView):
     permission_classes = [AllowAny]
     serializer_class = RegisterSerializer
 
     def post(self, request):
-        serializer = self.serializer_class(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
+        EmailService().send_welcome_email(request.user)
+        return render(request, 'emails/welcome.html', {'user': request.user})  # Redirect to a success page/template
+        # serializer = self.serializer_class(data=request.data)
+        # if serializer.is_valid():
+        #     user = serializer.save()
             
-            # Create verification token
-            verification_token = get_random_string(64)
-            user.verification_token = verification_token
-            user.save()        
-            # Generate tokens
-            refresh = RefreshToken.for_user(user)
-            profile = user.profile
-            profile_data = CurrentUserProfileSerializer(profile).data
+        #     # Create verification token
+        #     verification_token = get_random_string(64)
+        #     user.verification_token = verification_token
+        #     user.save()        
+        #     # Generate tokens
+        #     refresh = RefreshToken.for_user(user)
+        #     profile = user.profile
+        #     profile_data = CurrentUserProfileSerializer(profile).data
            
-            return Response({
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-                **profile_data  # Unpack profile_data into the main dictionary
+        #     return Response({
+        #         'refresh': str(refresh),
+        #         'access': str(refresh.access_token),
+        #         **profile_data  # Unpack profile_data into the main dictionary
       
                
-                # serializer.data
-            }, status=status.HTTP_201_CREATED)
+        #         # serializer.data
+        #     }, status=status.HTTP_201_CREATED)
         
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class LoginView(views.APIView):
     permission_classes = [AllowAny]
@@ -62,20 +122,32 @@ class LoginView(views.APIView):
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
+        
         if serializer.is_valid():
+            print(serializer.data)
             user = authenticate(
                 email=serializer.validated_data['email'],
                 password=serializer.validated_data['password']
             )
+            print('good')
             if user:
+                print('good 1')
                 refresh = RefreshToken.for_user(user)
+                print('good 1')
                 profile = user.profile
-                profile_data = CurrentUserProfileSerializer(profile).data
-                return Response({
-                    'refresh': str(refresh),
-                    'access': str(refresh.access_token),
-                    **profile_data  # Unpack profile_data into the main dictionary
-                })
+                print('good 1')
+                try:
+                    profile_data = CurrentUserProfileSerializer(profile).data
+                    print(profile_data)
+                    return Response({
+                        'refresh': str(refresh),
+                        'access': str(refresh.access_token),
+                        **profile_data 
+                    })
+                except:
+                        return Response({
+                    'error': 'Invalid credentials'
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             return Response({
                 'error': 'Invalid credentials'
             }, status=status.HTTP_401_UNAUTHORIZED)
@@ -151,66 +223,41 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         if self.action == 'me':
-            return ProfileDetailSerializer
+            return CurrentUserProfileSerializer
         if self.action == 'retrieve':
             return ProfileSerializer
         return super().get_serializer_class()
 
     def get_queryset(self):
-        # user = self.request.user
-        # try:
-        #     user_profile = Profile.objects.get(user=user)
-        # except Profile.DoesNotExist:
-        #     raise exceptions.NotFound('User profile does not exist')
-        # # Get blocked users
-        # blocked_users = UserBlock.objects.filter(
-        #     Q(user=user) | Q(blocked_user=user)
-        # ).values_list('user', 'blocked_user')
-        # blocked_ids = set()
-        # for block in blocked_users: 
-        #     blocked_ids.update(block)
-  
-
-        # # Exclude blocked users, own profile, and inactive/suspended/banned/deactivated users
-        # base_queryset = Profile.objects.exclude(
-        #     Q(user__id__in=blocked_ids) | 
-        #     Q(user=user) | 
-        #     Q(user_status__in=['IA', 'S', 'B', 'D'])  # Exclude inactive, suspended, banned, and deactivated users
-        # )
-        
-        # # Apply filters based on user preferences
-        # queryset = base_queryset
-
-        # # Gender preference - only filter if interested_in is not 'Everyone'
-        # if user_profile.interested_in != 'E':
-        #     queryset = queryset.filter(gender=user_profile.interested_in)
-
-        # # Apply age range filtering
-        # queryset = queryset.filter(
-        #     date_of_birth__gte=date.today() - relativedelta(years=user_profile.maximum_age_preference),
-        #     date_of_birth__lte=date.today() - relativedelta(years=user_profile.minimum_age_preference)
-        # )
-        
-        # # Filter by profile visibility
-        # queryset = queryset.filter(profile_visibility='VE')  # Visible to Everyone
-
-        # # Order by verification status, putting verified users first
-        # queryset = queryset.order_by(
-        #     F('is_verified').desc(),  # Place verified users first
-        #     'created_at'  # Secondary ordering can be adjusted as needed
-        # )
-
-        # # # Location-based filtering if coordinates are available
-        # # if user_profile.latitude and user_profile.longitude:
-        # #     queryset = queryset.annotate(
-        # #         distance=((F('latitude') - user_profile.latitude) ** 2 + 
-        # #                  (F('longitude') - user_profile.longitude) ** 2) ** 0.5
-        # #     ).filter(
-        # #         distance__lte=user_profile.maximum_distance_preference / 111.0  # Rough km to degree conversion
-        # #     ).order_by('distance')
-
-        # return queryset
+       
         return Profile.objects.all()
+    
+    def retrieve(self, request, *args, **kwargs):
+        """Retrieve a profile and record the visit"""
+        try:
+            # Get the requested profile
+            instance = self.get_object()
+            
+            # # Only record visits for other users' profiles
+            if request.user != instance.user:
+                print(request.user)
+                print(instance.user)
+                # Record the visit using get_or_create to prevent duplicates
+                Visit.objects.get_or_create(
+                    visitor=request.user,
+                    visited=instance.user
+                )
+            
+            # Proceed with normal retrieval
+            serializer = self.get_serializer(instance)
+            return Response(serializer.data)
+            
+        except Exception as e:
+            print(f"Profile retrieval error: {str(e)}",)
+            return Response(
+                {'error': 'Error retrieving profile'}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     @action(detail=False, methods=['GET'])
     def me(self, request):
@@ -242,40 +289,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
         """
         Returns recommended matches based on interests and preferences similarity
         """
-        user_profile = Profile.objects.get(user=request.user)
         base_queryset = self.get_queryset()
-
-        # Get user's interests
-        user_interests = set(user_profile.interests.values_list('id', flat=True))
-
-        # Annotate profiles with interest similarity score
-        matches = []
-        for profile in base_queryset:
-            profile_interests = set(profile.interests.values_list('id', flat=True))
-            interest_similarity = len(user_interests.intersection(profile_interests)) / \
-                                len(user_interests.union(profile_interests)) if user_interests or profile_interests else 0
-
-            # Calculate age similarity
-            # user_age = (date.today() - user_profile.date_of_birth.date()).days / 365.25
-            user_age = (date.today() - user_profile.date_of_birth).days / 365.25
-            print(user_age)
-            # profile_age = (date.today() - profile.date_of_birth.date()).days / 365.25
-            profile_age = (date.today() - profile.date_of_birth).days / 365.25
-            age_similarity = 1 - abs(user_age - profile_age) / 100  # Normalize age difference
-
-            # Calculate overall match score
-            match_score = (interest_similarity * 0.6) + (age_similarity * 0.4)
-
-            matches.append({
-                'profile': profile,
-                'match_score': match_score
-            })
-
-        # Sort by match score
-        matches.sort(key=lambda x: x['match_score'], reverse=True)
-        
-        # Serialize and return top matches
-        serializer = self.get_serializer([m['profile'] for m in matches[:10]], many=True)
+        serializer = self.get_serializer(base_queryset, many=True)
         return Response(serializer.data)
 
 class UserPhotoViewSet(viewsets.ModelViewSet):
@@ -307,11 +322,6 @@ class UserBlockViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
-
-class InterestViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Interest.objects.all()
-    serializer_class = InterestSerializer
-    permission_classes = [IsAuthenticated]
 
 class UserRatingViewSet(viewsets.ModelViewSet):
     serializer_class = UserRatingSerializer

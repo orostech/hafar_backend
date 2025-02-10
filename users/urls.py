@@ -10,7 +10,7 @@ router.register(r'profiles', views.ProfileViewSet, basename='profile')
 router.register(r'photos', views.UserPhotoViewSet, basename='photo')
 router.register(r'videos', views.UserVideoViewSet, basename='video')
 router.register(r'blocks', views.UserBlockViewSet, basename='block')
-router.register(r'interests', views.InterestViewSet, basename='interest')
+# router.register(r'interests', views.InterestViewSet, basename='interest')
 router.register(r'ratings', views.UserRatingViewSet, basename='rating')
 
 
@@ -28,4 +28,7 @@ urlpatterns = [
     path('auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('auth/verify-email/<str:token>/', views.VerifyEmailView.as_view(), name='verify-email'),
     path('auth/resend-verification/', views.ResendVerificationEmailView.as_view(), name='resend-verification'),
+        path('auth/password-reset/request/', views.PasswordResetRequestView.as_view()),
+    path('auth/password-reset/verify/', views.PasswordResetVerifyView.as_view()),
+    path('auth/password-reset/confirm/', views.PasswordResetConfirmView.as_view()),
 ]

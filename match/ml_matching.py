@@ -162,14 +162,14 @@ class MLMatchingService:
 
             # Map 'relationship_goal' field
             relationship_goal_map = {'NSR': 0, 'CAS': 1, 'LTR': 2, 'MAR': 3}
-
+          
             features = np.array([
                 float(profile.get_age() or 0),
                 float(profile.latitude or 0),
                 float(profile.longitude or 0),
                 float(profile.height or 0),
                 float(profile.weight or 0),
-                float(len(profile.interests.all())),
+                # float(len(profile.interests.all())),
                 # Use updated mapping
                 float(kids_map.get(profile.do_you_have_kids, 0)),
                 # Use updated mapping
@@ -181,5 +181,5 @@ class MLMatchingService:
             return features
         except Exception as e:
             print(
-                f"Error extracting features for profile {profile.id}: {str(e)}")
+                f"Error extracting features for profile {profile}: {str(e)}")
             return None

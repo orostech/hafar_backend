@@ -1,8 +1,7 @@
 # admin.py
 from django.contrib import admin
 from .models import (
-    User, Profile, UserPhoto, UserVideo, UserBlock,
-    Interest, UserRating, UserAudioRecording, VideoPreference
+    User, Profile, UserPhoto, UserVideo, UserBlock, UserRating, UserAudioRecording, VideoPreference
 )
 
 @admin.register(User)
@@ -18,7 +17,7 @@ class ProfileAdmin(admin.ModelAdmin):
     list_display = ('user', 'display_name', 'gender', 'date_of_birth', 'user_status')
     search_fields = ('user__username', 'display_name')
     list_filter = ('gender', 'user_status', 'is_verified', 'user_type', 'created_at')
-    filter_horizontal = ('interests',)
+    # filter_horizontal = ('interests',)
     readonly_fields = ('updated_at', 'created_at')
 
 @admin.register(UserPhoto)
@@ -38,10 +37,10 @@ class UserBlockAdmin(admin.ModelAdmin):
     list_display = ('user', 'blocked_user', 'created_at')
     search_fields = ('user__username', 'blocked_user__username')
 
-@admin.register(Interest)
-class InterestAdmin(admin.ModelAdmin):
-    list_display = ('name',)
-    search_fields = ('name',)
+# @admin.register(Interest)
+# class InterestAdmin(admin.ModelAdmin):
+#     list_display = ('name',)
+#     search_fields = ('name',)
 
 @admin.register(UserRating)
 class UserRatingAdmin(admin.ModelAdmin):

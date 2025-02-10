@@ -20,17 +20,7 @@ class ConfigurationViewSet(ReadOnlyModelViewSet):
                 'force_update': False
             },
             'choices': {
-                # 'gender': self._format_choices(GENDER_CHOICES),
-                # 'interest_in': self._format_choices(INTEREST_IN_CHOICES),
-                # 'relationship': self._format_choices(RELATIONSHIP_CHOICES),
-                # 'body_type': self._format_choices(BODY_TYPE_CHOICES),
-                # 'complexion': self._format_choices(COMPLEXION_CHOICES),
-                # 'pets': self._format_choices(DO_YOU_HAVE_PETS_CHOICES),
-                # 'smoking': self._format_choices(SMOKING_CHOICES),
-                # 'drinking': self._format_choices(DRINKING_CHOICES),
-                # 'user_type': self._format_choices(USER_TYPE_CHOICES),
-                # 'dietary': self._format_choices(DIETARY_PREFERENCES_CHOICES),
-                # 'relationship_status': self._format_choices(RELATIONSHIP_STATUS_CHOICES),
+            
                 'account_status': self._format_choices(ACCOUNT_STATUS_CHOICES),
                 'visibility': self._format_choices(VISIBILITY_CHOICES),
                 # 'interests': self._format_choices(INTEREST_CATEGORIES),
