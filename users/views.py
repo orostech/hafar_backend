@@ -65,6 +65,7 @@ class PasswordResetVerifyView(views.APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class PasswordResetConfirmView(views.APIView):
+    
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -85,6 +86,9 @@ class PasswordResetConfirmView(views.APIView):
                 return Response({"message": "Password reset successfully."}, status=status.HTTP_200_OK)
             return Response({"error": "Invalid or expired OTP."}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
 class RegisterView(views.APIView):
     permission_classes = [AllowAny]
     serializer_class = RegisterSerializer

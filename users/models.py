@@ -12,25 +12,12 @@ from django.core.validators import FileExtensionValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
 from django.utils.text import slugify
 
+from gift.models import VirtualGift
+from subscription.models import PremiumSubscription
+from wallet.payment_handlers import FlutterwaveHandler
+
 from .countries_states import COUNTRY_CHOICES, NIGERIA_STATES
 from .const import ( ACCOUNT_STATUS_CHOICES, BODY_TYPE_CHOICES, COMPLEXION_CHOICES, DIETARY_PREFERENCES_CHOICES, DO_YOU_HAVE_KIDS_CHOICES, DO_YOU_HAVE_PETS_CHOICES, DRINKING_CHOICES, GENDER_CHOICES, INTEREST_CATEGORIES, INTEREST_IN_CHOICES, RELATIONSHIP_CHOICES, RELATIONSHIP_STATUS_CHOICES, SMOKING_CHOICES, USER_TYPE_CHOICES, VERIFICATION_STATUS_CHOICES, VISIBILITY_CHOICES)
-
-# def generate_unique_username(email, display_name=''):
-#     """Generate a unique username based on email, first name, and last name."""
-#     base_username = email.split('@')[0]
-
-#     if display_name:
-#         base_username = f"{display_name.lower()}"
-#     else:
-#         base_username = email.split('@')[0]
-
-#     base_username = base_username.replace(
-#         ' ', '_').replace('.', '_').replace('@', '_')
-#     username = base_username    
-#     while User.objects.filter(username=username).exists():
-#         username = f"{base_username}{random.randint(1, 9999)}"
-#         print(username)
-#     return username
 
 def generate_unique_username(email, display_name=''):
     """
@@ -131,6 +118,58 @@ class User(AbstractUser, PermissionsMixin):
                 return photo.image_url
             return photo.image.url
         return None
+
+    @property
+    def available_coins(self):
+        return self.wallet.balance
+    
+    def purchase_coins(self, package):
+        """Handle coin purchases"""
+        handler = FlutterwaveHandler()
+        return handler.initialize_payment(self, package['amount'], package['coins'])
+    
+    def send_gift(self, receiver, gift_type):
+        """Send virtual gift to another user"""
+        gift_costs = {
+            'ROSE': 50,
+            'CHOCOLATE': 100,
+            'DIAMOND': 500
+        }
+        cost = gift_costs.get(gift_type)
+        
+        if cost and self.wallet.deduct_coins(cost):
+            VirtualGift.objects.create(
+                sender=self,
+                receiver=receiver,
+                gift_type=gift_type,
+                coins_value=cost
+            )
+            return True
+        return False
+    
+    def activate_premium(self, tier):
+        """Activate premium subscription"""
+        tiers = {
+            'BASIC': 500,
+            'VIP': 1000,
+            'PREMIUM': 2000
+        }
+        cost = tiers.get(tier)
+        
+        if cost and self.wallet.deduct_coins(cost):
+            PremiumSubscription.objects.update_or_create(
+                user=self,
+                defaults={
+                    'tier': tier,
+                    'end_date': timezone.now() + timezone.timedelta(days=30),
+                    'coin_cost': cost,
+                    'is_active': True
+                }
+            )
+            return True
+        return False
+
+
 class Profile(models.Model):
     # Basic Information
     user = models.OneToOneField(settings.AUTH_USER_MODEL,primary_key=True, on_delete=models.CASCADE, related_name='profile')
@@ -554,7 +593,7 @@ class OTP(models.Model):
     
     def save(self, *args, **kwargs):
         if not self.expires_at:
-            self.expires_at = timezone.now() + timezone.timedelta(minutes=15)
+            self.expires_at = timezone.now() + timezone.timedelta(minutes=5)
         super().save(*args, **kwargs)
 
     def is_valid(self):
