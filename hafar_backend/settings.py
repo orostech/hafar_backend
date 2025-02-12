@@ -28,13 +28,21 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'channels',
     'storages',
-
+    'drf_yasg',
+    'drf_spectacular',
+    
     # HAFAR APPS
     'chat',
-    'users',
-    'match',
     'config',
-    'notification'
+    'gift',
+    'match',
+    'notification',
+    'subscription',    
+    'users',
+    'wallet'
+
+
+
 
 ]
 
@@ -127,9 +135,18 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'message': '10/minute',  # Adjust as needed
     },
+    # 'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema', 
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 
     'EXCEPTION_HANDLER': 'chat.utils.custom_exception_handler'
 
+}
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Hafar Social API',
+    'DESCRIPTION': 'Hafae dating app',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    # OTHER SETTINGS
 }
 
 SIMPLE_JWT = {

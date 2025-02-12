@@ -1,0 +1,7 @@
+openapi: 3.0.3
+info:
+  title: Hafar Social API
+  version: 1.0.0
+  description: Hafae dating app
+paths: {}
+components: {}

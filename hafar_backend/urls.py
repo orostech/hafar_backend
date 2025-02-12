@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import include, path
 from rest_framework import views, response
-
+from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 class APIRootView(views.APIView):
     """
     A simple view to respond to GET requests to the root of the API.
@@ -22,7 +22,17 @@ apipatterns = [
 
 
 urlpatterns = [
+    # path("", APIRootView.as_view(), name='api-root'),
+  
+    # path('', include(apipatterns)),
+]
+
+urlpatterns = [
+    # YOUR PATTERNS
     path("", APIRootView.as_view(), name='api-root'),
-    path('admin/', admin.site.urls),
     path('', include(apipatterns)),
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('admin/', admin.site.urls),
+    path('test/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    # path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 ]
