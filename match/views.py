@@ -257,6 +257,19 @@ class MatchActionViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['GET'])
     def potential_matches(self, request):
         """Get potential matches based on preferences and matching algorithm"""
+        """Get filtered potential matches"""
+        # Parse filters from query params
+        filters = {
+            'gender': request.query_params.get('gender'),
+            'min_age': int(request.query_params.get('min_age', 18)),
+            'max_age': int(request.query_params.get('max_age', 100)),
+            'states': request.query_params.getlist('states'),
+            'max_distance': float(request.query_params.get('max_distance', 100)),
+            'relationship_goal': request.query_params.get('relationship_goal'),
+            'interests': request.query_params.getlist('interests'),
+            'show_verified_only': request.query_params.get('show_verified_only', 'false') == 'true',
+            'lifestyle': dict(request.query_params.lists())  # Handle multiple lifestyle params
+        }
         matching_service = MatchingService(request.user)
         potential_matches = matching_service.get_potential_matches(limit=100) 
         print(f'see {len(potential_matches)}') 
