@@ -1,4 +1,5 @@
 # views.py
+import requests
 from rest_framework import viewsets, generics, filters,exceptions 
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -10,7 +11,7 @@ from dateutil.relativedelta import relativedelta
 from django.shortcuts import render
 from match.serializers import ProfileMinimalSerializer
 from notification.email_service import EmailService
-from .models import OTP, Profile, User, UserPhoto, UserVideo, UserBlock, UserRating
+from .models import OTP, Profile, User, UserPhoto, UserVideo, UserBlock, UserRating, generate_unique_username
 from .serializers import (
     CurrentUserProfileSerializer, PasswordResetConfirmSerializer, PasswordResetRequestSerializer, PasswordResetVerifySerializer, ProfileSerializer, UserPhotoSerializer, RegisterSerializer, UserVideoSerializer,
     UserBlockSerializer, UserRatingSerializer
@@ -87,38 +88,84 @@ class PasswordResetConfirmView(views.APIView):
             return Response({"error": "Invalid or expired OTP."}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class GoogleLogin(views.APIView):
+    permission_classes = [AllowAny]
 
+    def post(self, request):
+        try:
+            # Get the token from request data
+            token = request.data.get('token')
+            if not token:
+                return Response({'error': 'Token is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Verify token with Google
+            response = requests.get(
+                f'https://oauth2.googleapis.com/tokeninfo?id_token={token}')
+            if response.status_code != 200:
+                error_details = response.json()
+                return Response({'error': error_details.get('error_description')}, status=status.HTTP_400_BAD)
+            user_info = response.json()
+            email = user_info.get('email')
+            first_name = user_info.get('given_name')
+            last_name = user_info.get('family_name')
+            name = user_info.get('name')
+            display_name = name or email.split('@')[0]
+            username = generate_unique_username(email, display_name)
+
+            try:
+                user = User.objects.get(email=email)
+            except User.DoesNotExist:
+                user = User.objects.create(
+                    email=email,
+                    first_name=first_name,
+                    last_name= last_name,
+                    email_verified=True,
+                    username=username,
+                    password=make_password(None)  # Set unusable password
+                )
+
+            # Generate tokens
+            refresh = RefreshToken.for_user(user)
+            profile = user.profile
+            profile_data = CurrentUserProfileSerializer(profile).data
+
+            return Response({
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+                **profile_data
+            })
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class RegisterView(views.APIView):
     permission_classes = [AllowAny]
     serializer_class = RegisterSerializer
 
     def post(self, request):
-        EmailService().send_welcome_email(request.user)
-        return render(request, 'emails/welcome.html', {'user': request.user})  # Redirect to a success page/template
-        # serializer = self.serializer_class(data=request.data)
-        # if serializer.is_valid():
-        #     user = serializer.save()
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
             
-        #     # Create verification token
-        #     verification_token = get_random_string(64)
-        #     user.verification_token = verification_token
-        #     user.save()        
-        #     # Generate tokens
-        #     refresh = RefreshToken.for_user(user)
-        #     profile = user.profile
-        #     profile_data = CurrentUserProfileSerializer(profile).data
+            # Create verification token
+            verification_token = get_random_string(64)
+            user.verification_token = verification_token
+            user.save()        
+            # Generate tokens
+            refresh = RefreshToken.for_user(user)
+            profile = user.profile
+            profile_data = CurrentUserProfileSerializer(profile).data
            
-        #     return Response({
-        #         'refresh': str(refresh),
-        #         'access': str(refresh.access_token),
-        #         **profile_data  # Unpack profile_data into the main dictionary
+            return Response({
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+                **profile_data  # Unpack profile_data into the main dictionary
       
                
-        #         # serializer.data
-        #     }, status=status.HTTP_201_CREATED)
+                # serializer.data
+            }, status=status.HTTP_201_CREATED)
         
-        # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class LoginView(views.APIView):
     permission_classes = [AllowAny]
@@ -133,7 +180,7 @@ class LoginView(views.APIView):
                 email=serializer.validated_data['email'],
                 password=serializer.validated_data['password']
             )
-            print('good')
+    
             if user:
                 print('good 1')
                 refresh = RefreshToken.for_user(user)
