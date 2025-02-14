@@ -33,11 +33,11 @@ def check_profile_completion_on_profile_update(sender, instance, created, **kwar
 def check_profile_completion_on_photo_upload(sender, instance, created, **kwargs):
     if created:
         profile = instance.user.profile
-        required_fields = [
+        required_fields = [ 
             profile.display_name != 'Unknown',
             profile.date_of_birth is not None,
             profile.gender,
-            instance.user.photos.exists()  # Now at least one exists
+            instance.user.photos.exists()  
         ]
         if all(required_fields) and not profile.welcome_email_sent:
             try:

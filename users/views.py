@@ -5,10 +5,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.db.models import Q, F
-from django.contrib.postgres.search import TrigramSimilarity
-from datetime import date
-from dateutil.relativedelta import relativedelta
-from django.shortcuts import render
+from django.utils import timezone
 from match.serializers import ProfileMinimalSerializer
 from notification.email_service import EmailService
 from .models import OTP, Profile, User, UserPhoto, UserVideo, UserBlock, UserRating, generate_unique_username
@@ -175,21 +172,28 @@ class LoginView(views.APIView):
         serializer = self.serializer_class(data=request.data)
         
         if serializer.is_valid():
-            print(serializer.data)
             user = authenticate(
                 email=serializer.validated_data['email'],
                 password=serializer.validated_data['password']
             )
     
             if user:
-                print('good 1')
                 refresh = RefreshToken.for_user(user)
-                print('good 1')
                 profile = user.profile
-                print('good 1')
+                try:
+                    context = {
+                        'user': user,
+                        'login_time': timezone.now().strftime("%Y-%m-%d %H:%M %Z"),
+                        'device_info': request.META.get('HTTP_USER_AGENT', 'Unknown device'),
+                        'location': self.get_location_from_ip(request),
+                        'security_url': f"{settings.FRONTEND_URL}/security"
+                    }
+                    print(context)
+                    EmailService().send_login_alert(user, context)
+                except Exception as e:
+                    print(f"Error sending login alert: {str(e)}")
                 try:
                     profile_data = CurrentUserProfileSerializer(profile).data
-                    print(profile_data)
                     return Response({
                         'refresh': str(refresh),
                         'access': str(refresh.access_token),
@@ -204,6 +208,11 @@ class LoginView(views.APIView):
             }, status=status.HTTP_401_UNAUTHORIZED)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def get_location_from_ip(self, request):
+        ip = request.META.get('REMOTE_ADDR')
+        # Implement IP geolocation lookup here if needed
+        return ip or "Unknown location"
 
 class VerifyEmailView(views.APIView):
     permission_classes = [AllowAny]
