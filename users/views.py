@@ -188,8 +188,7 @@ class LoginView(views.APIView):
                         'location': self.get_location_from_ip(request),
                         'security_url': f"{settings.FRONTEND_URL}/security"
                     }
-                    print(context)
-                    EmailService().send_login_alert(user, context)
+                    # EmailService().send_login_alert(user, context)
                 except Exception as e:
                     print(f"Error sending login alert: {str(e)}")
                 try:
@@ -281,6 +280,11 @@ class ProfileViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter]
     search_fields = ['display_name', 'bio']
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+
     def get_serializer_class(self):
         if self.action == 'me':
             return CurrentUserProfileSerializer
@@ -322,7 +326,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['GET'])
     def me(self, request):
         profile = self.request.user.profile
-        serializer = CurrentUserProfileSerializer(profile)
+        serializer = CurrentUserProfileSerializer(profile,context={'request': request})
         return Response(serializer.data)
     
     @action(detail=False, methods=['POST'])

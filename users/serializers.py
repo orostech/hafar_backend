@@ -55,10 +55,12 @@ class UserPhotoSerializer(serializers.ModelSerializer):
         read_only_fields = ('created_at', 'updated_at')
 
     def get_image(self, obj):
-        photo = obj
-        if not photo.image:
-            return photo.image_url
-        return photo.image.url
+        request = self.context.get('request')
+        if not obj.image:
+            return obj.image_url
+        if request:
+            return request.build_absolute_uri(obj.image.url)
+        return obj.image.url
 
 
 
