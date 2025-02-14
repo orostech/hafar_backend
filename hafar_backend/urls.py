@@ -18,6 +18,7 @@ v1patterns = [
      path("", include("users.urls")),
      path("", include("match.urls")),
      path("", include("chat.urls")),
+     path("", include("wallet.urls")),
 ]
 
 apipatterns = [

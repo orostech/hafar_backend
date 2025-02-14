@@ -56,6 +56,9 @@ class DepositSerializer(serializers.Serializer):
         min_value=Decimal('100.00')
         # min_value=100.00
     )
+    # fields = [
+    #     'amount'
+    # ]
 
 class WithdrawalSerializer(serializers.Serializer):
     coins_amount = serializers.IntegerField(min_value=1000)
