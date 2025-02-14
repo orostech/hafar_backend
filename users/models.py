@@ -259,7 +259,7 @@ class Profile(models.Model):
     profile_view_notitication = models.BooleanField(default=True)
     likes_received_notitication = models.BooleanField(default=True)
 
-
+    welcome_email_sent = models.BooleanField(default=False)
     # Ratings & Reviews
     def average_rating(self):
         ratings = self.ratings_received.all()

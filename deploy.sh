@@ -23,9 +23,17 @@ source $VENV_DIR/bin/activate
 echo "Installing dependencies..."
 pip install -r requirements.txt
 
+# Apply database makemigrations
+echo "Applying database migrations..."
+python manage.py makemigrations
+
 # Apply database migrations
 echo "Applying database migrations..."
 python manage.py migrate
+
+# # Apply database makemigrations
+# echo "Applying database migrations..."
+# python manage.py makemigrations
 
 # Collect static files
 echo "Collecting static files..."
