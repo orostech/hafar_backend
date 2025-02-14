@@ -1,7 +1,7 @@
 from datetime import timezone
 import requests
 from django.conf import settings
-from .models import PaymentTransaction
+from .models import CoinRate, PaymentTransaction
 
 class FlutterwaveHandler:
     API_BASE = 'https://api.flutterwave.com/v3'
@@ -9,11 +9,13 @@ class FlutterwaveHandler:
     def __init__(self):
         self.secret_key = settings.FLUTTERWAVE_SECRET_KEY
     
-    def initialize_payment(self, user, amount, coin_package):
+    def initialize_payment(self, user, naira_amount, coin_package=None):
+        current_rate = CoinRate.objects.filter(is_active=True).latest().rate
+        coins = int(naira_amount * current_rate)
         headers = {'Authorization': f'Bearer {self.secret_key}'}
         payload = {
             'tx_ref': f"HAFAR-COINS-{user.id}-{timezone.now().timestamp()}",
-            'amount': str(amount),
+            'amount': str(naira_amount),
             'currency': 'NGN',
             'redirect_url': f"{settings.FRONTEND_URL}/payment-callback",
             'customer': {
@@ -22,7 +24,7 @@ class FlutterwaveHandler:
             },
             'customizations': {
                 'title': "Hafar Social Coins Purchase",
-                'description': f"Purchase of {coin_package} coins"
+                'description': f"Purchase of {coins} coins"
             }
         }
         
@@ -36,8 +38,9 @@ class FlutterwaveHandler:
             data = response.json()
             PaymentTransaction.objects.create(
                 user=user,
-                amount=amount,
-                coins=coin_package,
+                naira_amount=naira_amount,
+                coins=coins,
+                exchange_rate=current_rate,
                 payment_gateway='FLUTTERWAVE',
                 status='PENDING',
                 reference=data['data']['tx_ref']

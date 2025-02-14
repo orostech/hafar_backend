@@ -4,12 +4,19 @@ from django.conf import settings
 from django.utils import timezone
 from django.db.models import F
 
+class CoinRate(models.Model):
+    rate = models.PositiveIntegerField(help_text="Coins per 1 Naira")  # E.g 1 Naira = 10 coins
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"1 NGN = {self.rate} coins (Active: {self.is_active})"
+
+    class Meta:
+        ordering = ['-created_at']
+        get_latest_by = 'created_at'
 class Wallet(models.Model):
-    user = models.OneToOneField(
-        settings.AUTH_USER_MODEL, 
-        on_delete=models.CASCADE, 
-        related_name='wallet'
-    )
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='wallet')
     balance = models.PositiveIntegerField(default=0)
     total_earned = models.PositiveIntegerField(default=0)
     total_spent = models.PositiveIntegerField(default=0)
@@ -36,6 +43,17 @@ class Wallet(models.Model):
         self.total_earned = F('total_earned') + amount
         self.save(update_fields=['balance', 'total_earned'])
         return True
+    
+    def withdraw_coins(self, coins_amount, fee_percentage=15):
+        fee = (coins_amount * fee_percentage) // 100
+        total_deduction = coins_amount + fee
+        
+        if self.balance >= total_deduction:
+            self.balance = F('balance') - total_deduction
+            self.total_spent = F('total_spent') + total_deduction
+            self.save(update_fields=['balance', 'total_spent'])
+            return True
+        return False
 
 class Transaction(models.Model):
     TRANSACTION_TYPES = [
@@ -65,8 +83,10 @@ class WithdrawalRequest(models.Model):
     ]
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    amount = models.PositiveIntegerField()
-    fee = models.PositiveIntegerField()
+    exchange_rate = models.PositiveIntegerField()
+    coins_amount = models.PositiveIntegerField()
+    naira_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    fee_percentage = models.PositiveIntegerField(default=5, help_text="Percentage fee for withdrawal")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
     created_at = models.DateTimeField(auto_now_add=True)
     processed_at = models.DateTimeField(null=True, blank=True)
@@ -79,7 +99,8 @@ class PaymentTransaction(models.Model):
     ]
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    exchange_rate = models.PositiveIntegerField(null=True)
+    naira_amount = models.DecimalField(max_digits=10, decimal_places=2)
     coins = models.PositiveIntegerField()
     payment_gateway = models.CharField(max_length=50)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')

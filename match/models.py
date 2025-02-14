@@ -3,7 +3,6 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
-
 from wallet.models import Transaction
 
 class Like(models.Model):

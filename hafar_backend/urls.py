@@ -4,6 +4,8 @@ from rest_framework import views, response
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 from django.conf import settings
 from django.conf.urls.static import static
+
+from wallet.webhooks import flutterwave_webhook
 class APIRootView(views.APIView):
     """
     A simple view to respond to GET requests to the root of the API.
@@ -26,14 +28,13 @@ apipatterns = [
 urlpatterns = [
     # YOUR PATTERNS
     path("", APIRootView.as_view(), name='api-root'),
-    path('test/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
-  
     path('', include(v1patterns)),
     path('v1/', include(apipatterns)),
+    path('webhooks/flutterwave/', flutterwave_webhook, name='flutterwave-webhook'),
+    path('test/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('admin/', admin.site.urls),
-     # path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
-]
+    ]
 
 
 # Serve media files during development
