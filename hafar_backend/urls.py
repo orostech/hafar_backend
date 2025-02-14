@@ -19,24 +19,20 @@ v1patterns = [
 ]
 
 apipatterns = [
-    path('v1/', include(v1patterns)),
+    path('', include(v1patterns)),
 ]
 
-
-urlpatterns = [
-    # path("", APIRootView.as_view(), name='api-root'),
-  
-    # path('', include(apipatterns)),
-]
 
 urlpatterns = [
     # YOUR PATTERNS
     path("", APIRootView.as_view(), name='api-root'),
-    path('', include(apipatterns)),
+    path('test/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+  
+    path('', include(v1patterns)),
+    path('v1/', include(apipatterns)),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('admin/', admin.site.urls),
-    path('test/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
-    # path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+     # path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 ]
 
 
