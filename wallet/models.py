@@ -5,7 +5,8 @@ from django.utils import timezone
 from django.db.models import F
 
 class CoinRate(models.Model):
-    rate = models.PositiveIntegerField(help_text="Coins per 1 Naira")  # E.g 1 Naira = 10 coins
+    rate = models.DecimalField(max_digits=2, decimal_places=2, help_text="Coins per 1 Naira")  # E.g 1 Naira = 10 coins
+    # rate = models.PositiveIntegerField(help_text="Coins per 1 Naira")  # E.g 1 Naira = 10 coins
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

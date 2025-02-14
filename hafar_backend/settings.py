@@ -11,6 +11,7 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 
 SECRET_KEY = config('SECRET_KEY')
 ALLOWED_HOSTS = config('ALLOWED_HOSTS',cast=Csv())
+FLUTTERWAVE_SECRET_KEY = config('FLUTTERWAVE_SECRET_KEY')
 
 # Application definition
 
@@ -40,10 +41,6 @@ INSTALLED_APPS = [
     'subscription',    
     'users',
     'wallet'
-
-
-
-
 ]
 
 MIDDLEWARE = [
