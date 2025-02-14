@@ -8,6 +8,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class EmailService:
     def __init__(self):
         self.client = PostmarkClient(server_token=settings.POSTMARK_API_KEY)
@@ -20,16 +21,17 @@ class EmailService:
         """
         try:
             # Render HTML and text versions
-            html_content = render_to_string(f'emails/{template_name}.html', context)
+            html_content = render_to_string(
+                f'emails/{template_name}.html', context)
             text_content = strip_tags(html_content)
 
             # Send via Postmark
             self.client.emails.send(
-                From= self.default_from_email,
-                To= to_email,
-                Subject= subject,
-                HtmlBody= html_content,
-                TextBody=  text_content,
+                From=self.default_from_email,
+                To=to_email,
+                Subject=subject,
+                HtmlBody=html_content,
+                TextBody=text_content,
                 MessageStream='outbound'  # or 'broadcast' for bulk emails
             )
             logger.info(f"Email sent successfully to {to_email}: {subject}")
@@ -51,6 +53,16 @@ class EmailService:
             'welcome',
             context
         )
+
+    def send_login_alert(self, user, context):
+        subject = "New Login Activity Detected"  
+        return self._send_email_template(
+            user.email,
+            subject,
+            'login_alert',
+            context
+        )
+
 
     def send_match_notification(self, match):
         """Send email when users match"""
@@ -147,6 +159,7 @@ class EmailService:
             'weekly_digest',
             context
         )
+
     def send_password_reset_otp(self, user, code):
         context = {
             'user': user,

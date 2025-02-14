@@ -264,3 +264,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 POSTMARK_API_KEY = '2a3c0088-e7fa-4e6b-95db-00c13af1ac67'
 DEFAULT_FROM_EMAIL = 'hafar.orostech@joinhafar.com'
 FRONTEND_URL = 'https://joinhafar.com'
+SITE_NAME = "Hafar"
