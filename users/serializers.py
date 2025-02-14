@@ -3,6 +3,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 
 from users.const import RELATIONSHIP_CHOICES
+from wallet.serializers import WalletSerializer
 from .models import (
     Profile, UserPhoto, UserVideo, UserBlock,
     UserRating, UserAudioRecording, VideoPreference
@@ -176,6 +177,7 @@ class CurrentUserProfileSerializer(serializers.ModelSerializer):
     phone_verified  = serializers.ReadOnlyField(source='user.phone_verified')
     device_token  = serializers.ReadOnlyField(source='user.device_token')
     photos = UserPhotoSerializer(source='user.photos',many=True, read_only=True)
+    wallet = WalletSerializer(source='user.wallet', read_only=True)
     # interests = InterestSerializer(many=True, read_only=True)
     age = serializers.SerializerMethodField()
 
@@ -183,7 +185,7 @@ class CurrentUserProfileSerializer(serializers.ModelSerializer):
         model = Profile
         fields = (
             # Information Level 1
-            'id', 'old_id', 'username', 'display_name', 'bio', 'date_of_birth','age', 'gender','photos', 'phone', 'email_verified', 'phone_verified', 'device_token', 'created_at', 'updated_at', 'last_seen',
+            'id', 'old_id', 'username', 'display_name', 'bio', 'date_of_birth','age', 'gender','photos','wallet', 'phone', 'email_verified', 'phone_verified', 'device_token', 'created_at', 'updated_at', 'last_seen',
             # Information Level 2
             # 'interests',
             'profession', 'relationship_goal', 'interested_in',   'body_type',   'complexion', 'do_you_have_kids', 'do_you_have_pets', 'weight', 'height', 'dietary_preferences', 'smoking',
