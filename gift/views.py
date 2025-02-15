@@ -71,6 +71,11 @@ class GiftShopAPI(APIView):
 class SendGiftAPI(APIView):
     permission_classes = [IsAuthenticated]
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+
     @extend_schema(
         summary="Send a Gift",
         description="Allows an authenticated user to send a gift to another user. The sender's wallet will be debited, and the receiver's wallet will be credited with 90% of the gift's value.",
@@ -146,6 +151,7 @@ class SendGiftAPI(APIView):
         },
     )
     def post(self, request):
+        print(request.data)
         serializer = SendGiftSerializer(
             data=request.data,
             context={'request': request}
@@ -161,12 +167,14 @@ class SendGiftAPI(APIView):
                 gift_type=serializer.validated_data['gift_type'],
                 message=serializer.validated_data.get('message', '')
             )
-            return Response(VirtualGiftSerializer(gift).data, status=status.HTTP_201_CREATED)
+            return Response(VirtualGiftSerializer(gift, context={'request': request}).data, status=status.HTTP_201_CREATED)
 
         except ValueError as e:
+            print(str(e))
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         except Exception as e:
+            print(str(e))
             return Response(
                 {'error': 'Failed to send gift'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -175,6 +183,10 @@ class SendGiftAPI(APIView):
 
 class GiftHistoryAPI(APIView):
     permission_classes = [IsAuthenticated]
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
 
     @extend_schema(
         summary="Retrieve Gift History",
@@ -222,6 +234,7 @@ class GiftHistoryAPI(APIView):
         },
     )
     def get(self, request):
+        print(request.user)
         gifts = VirtualGift.objects.filter(
             receiver=request.user).select_related('gift_type')
         serializer = VirtualGiftSerializer(gifts, many=True)
