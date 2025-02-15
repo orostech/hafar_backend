@@ -3,7 +3,7 @@ import requests
 from django.conf import settings
 from .models import CoinRate, PaymentTransaction
 from django.utils import timezone
-# PIN authentication	Mastercard	5531886652142950	09/32	564	12345	3310
+#Fake PIN authentication	Mastercard	5531886652142950	09/32	564	12345	3310
 class FlutterwaveHandler:
     API_BASE = 'https://api.flutterwave.com/v3'
     
