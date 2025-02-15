@@ -15,6 +15,7 @@ class APIRootView(views.APIView):
 
 v1patterns = [
      path("", include("config.urls")),
+     path("gifts/", include('gift.urls')),
      path("", include("users.urls")),
      path("", include("match.urls")),
      path("", include("chat.urls")),

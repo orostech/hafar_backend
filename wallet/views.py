@@ -72,32 +72,42 @@ class CoinRateAPI(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        summary="Get Current Coin Rate",
-        description="Allows an authenticated user to get the current active coin rate.",
-        responses={
-            200: OpenApiResponse(
-                response=CoinRateSerializer,
-                description="Current active coin rate retrieved successfully.",
-                examples=[
-                    OpenApiExample(
-                        "Example Response",
-                        value={"rate": 500, "created_at": "2023-10-10T10:00:00Z"},
-                        response_only=True,
-                    )
-                ],
-            ),
-            404: OpenApiResponse(
-                description="Not Found - No active coin rate found",
-                examples=[
-                    OpenApiExample(
-                        "No Active Coin Rate",
-                        value={"error": "No active coin rate found"},
-                        response_only=True,
-                    )
-                ],
-            ),
-        },
-    )
+    summary="Get Current Coin Rate",
+    description="Retrieve the current active coin rate, which defines the exchange rate between coins and the platform's currency.",
+    responses={
+        200: OpenApiResponse(
+            response=CoinRateSerializer,
+            description="Current active coin rate retrieved successfully.",
+            examples=[
+                OpenApiExample(
+                    "Example Response",
+                    value={"rate": 0.1, "created_at": "2023-10-10T10:00:00Z"},
+                    response_only=True,
+                )
+            ],
+        ),
+        404: OpenApiResponse(
+            description="Not Found - No active coin rate found.",
+            examples=[
+                OpenApiExample(
+                    "No Active Coin Rate",
+                    value={"error": "No active coin rate found."},
+                    response_only=True,
+                )
+            ],
+        ),
+        401: OpenApiResponse(
+            description="Unauthorized - User is not authenticated.",
+            examples=[
+                OpenApiExample(
+                    "Unauthorized",
+                    value={"detail": "Authentication credentials were not provided."},
+                    response_only=True,
+                )
+            ],
+        ),
+    },
+)
     def get(self, request):
         try:
             rate = CoinRate.objects.filter(is_active=True).latest('created_at')
@@ -114,12 +124,11 @@ class DepositAPIView(APIView):
     serializer = DepositSerializer
 
     @extend_schema(
-        summary="Initiate a Deposit",
-        description="Allows an authenticated user to initiate a deposit transaction and returns a payment URL.",
-        request=DepositSerializer,
-        responses={
+    summary="Initiate a Deposit",
+    description="Allows an authenticated user to initiate a deposit transaction to purchase coins. Returns a payment URL for completing the transaction.",
+    request=DepositSerializer,
+    responses={
         200: OpenApiResponse(
-            response=DepositSerializer,
             description="Payment URL generated successfully.",
             examples=[
                 OpenApiExample(
@@ -130,17 +139,28 @@ class DepositAPIView(APIView):
             ],
         ),
         400: OpenApiResponse(
-            description="Bad Request - Invalid input",
+            description="Bad Request - Invalid input.",
             examples=[
                 OpenApiExample(
                     "Invalid Amount",
-                    value={"error": "Invalid amount"},
+                    value={"error": "Invalid amount."},
+                    response_only=True,
+                )
+            ],
+        ),
+        401: OpenApiResponse(
+            description="Unauthorized - User is not authenticated.",
+            examples=[
+                OpenApiExample(
+                    "Unauthorized",
+                    value={"detail": "Authentication credentials were not provided."},
                     response_only=True,
                 )
             ],
         ),
     },
-    )
+)
+
 # {"amount":"3000"}
     def post(self, request):
         print('m011')
@@ -170,6 +190,51 @@ class DepositAPIView(APIView):
             )
 class WithdrawalAPI(APIView):
     permission_classes = [IsAuthenticated]
+    @extend_schema(
+    summary="Initiate a Withdrawal",
+    description="Allows an authenticated user to initiate a withdrawal request to convert coins into the platform's currency. A fee is deducted from the total amount.",
+    request=WithdrawalSerializer,
+    responses={
+        200: OpenApiResponse(
+            response=WithdrawalRequestSerializer,
+            description="Withdrawal request created successfully.",
+            examples=[
+                OpenApiExample(
+                    "Example Response",
+                    value={
+                        "id": 1,
+                        "coins_amount": 1000,
+                        "naira_amount": 850.0,
+                        "fee_percentage": 15,
+                        "status": "PENDING",
+                        "created_at": "2023-10-10T12:00:00Z"
+                    },
+                    response_only=True,
+                )
+            ],
+        ),
+        400: OpenApiResponse(
+            description="Bad Request - Invalid input or insufficient balance.",
+            examples=[
+                OpenApiExample(
+                    "Insufficient Balance",
+                    value={"error": "Insufficient balance."},
+                    response_only=True,
+                )
+            ],
+        ),
+        401: OpenApiResponse(
+            description="Unauthorized - User is not authenticated.",
+            examples=[
+                OpenApiExample(
+                    "Unauthorized",
+                    value={"detail": "Authentication credentials were not provided."},
+                    response_only=True,
+                )
+            ],
+        ),
+    },
+)
 
     def post(self, request):
         serializer = WithdrawalSerializer(data=request.data)
