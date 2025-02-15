@@ -18,6 +18,7 @@ from .serializers import (
     WithdrawalSerializer,
     CoinRateSerializer
 )
+from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiExample
 
 class WalletDashboardView(APIView):
     permission_classes = [IsAuthenticated]
@@ -66,15 +67,80 @@ class WalletAPI(APIView):
         wallet = request.user.wallet
         serializer = WalletSerializer(wallet)
         return Response(serializer.data)
+
 class CoinRateAPI(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="Get Current Coin Rate",
+        description="Allows an authenticated user to get the current active coin rate.",
+        responses={
+            200: OpenApiResponse(
+                response=CoinRateSerializer,
+                description="Current active coin rate retrieved successfully.",
+                examples=[
+                    OpenApiExample(
+                        "Example Response",
+                        value={"rate": 500, "created_at": "2023-10-10T10:00:00Z"},
+                        response_only=True,
+                    )
+                ],
+            ),
+            404: OpenApiResponse(
+                description="Not Found - No active coin rate found",
+                examples=[
+                    OpenApiExample(
+                        "No Active Coin Rate",
+                        value={"error": "No active coin rate found"},
+                        response_only=True,
+                    )
+                ],
+            ),
+        },
+    )
     def get(self, request):
-        rate = CoinRate.objects.filter(is_active=True).last()
-        serializer = CoinRateSerializer(rate)
-        return Response(serializer.data)
+        try:
+            rate = CoinRate.objects.filter(is_active=True).latest('created_at')
+            serializer = CoinRateSerializer(rate)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except CoinRate.DoesNotExist:
+            return Response(
+                {'error': 'No active coin rate found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
 class DepositAPIView(APIView):
     permission_classes = [IsAuthenticated]
-    serializer = DepositSerializer()
-    
+    serializer = DepositSerializer
+
+    @extend_schema(
+        summary="Initiate a Deposit",
+        description="Allows an authenticated user to initiate a deposit transaction and returns a payment URL.",
+        request=DepositSerializer,
+        responses={
+        200: OpenApiResponse(
+            response=DepositSerializer,
+            description="Payment URL generated successfully.",
+            examples=[
+                OpenApiExample(
+                    "Example Response",
+                    value={"payment_url": "https://payment-gateway.com/checkout/xyz"},
+                    response_only=True,
+                )
+            ],
+        ),
+        400: OpenApiResponse(
+            description="Bad Request - Invalid input",
+            examples=[
+                OpenApiExample(
+                    "Invalid Amount",
+                    value={"error": "Invalid amount"},
+                    response_only=True,
+                )
+            ],
+        ),
+    },
+    )
 # {"amount":"3000"}
     def post(self, request):
         print('m011')
