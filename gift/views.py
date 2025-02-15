@@ -11,6 +11,12 @@ from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiExample
 class GiftShopAPI(APIView):
     permission_classes = [IsAuthenticated]
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+    
+
     @extend_schema(
         summary="List Available Gifts",
         description="Retrieve a list of all active gifts available in the shop, including their details such as name, price, image, and animation URLs.",
@@ -58,7 +64,7 @@ class GiftShopAPI(APIView):
     )
     def get(self, request):
         gifts = GiftType.objects.filter(is_active=True).order_by('coin_price')
-        serializer = GiftTypeSerializer(gifts, many=True)
+        serializer = GiftTypeSerializer(gifts, many=True,context={'request': request})
         return Response(serializer.data)
 
 
