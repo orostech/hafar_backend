@@ -13,10 +13,12 @@ class GiftTypeSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_image_url(self, obj):
-        return obj.image.url if obj.image else None
+        request = self.context.get('request')
+        return request.build_absolute_uri(obj.image.url) if obj.image else None
 
     def get_animation_url(self, obj):
-        return obj.animation.url if obj.animation else None
+        request = self.context.get('request')
+        return request.build_absolute_uri(obj.animation.url) if obj.animation else None
 
 class VirtualGiftSerializer(serializers.ModelSerializer):
     gift_type = GiftTypeSerializer(read_only=True)
