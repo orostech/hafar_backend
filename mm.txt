@@ -1,17 +1,13 @@
 
-Access the Django admin site
-    URL: http://167.99.54.130/admin
-    User: django
-    Pass: 25bc647ba57b71e85e8403149c238f76
-
-Use these SFTP credentials to upload files with FileZilla/WinSCP/rsync:
-    Host: 167.99.54.130
-    User: django
-    Pass: 25bc647ba57b71e85e8403149c238f76
-
-Django is configured to use managed Postgres as its database. Use the following credentials to manage the database:
-    Database: django
-    Host:     dbaas-db-6681578-do-user-18921121-0.m.db.ondigitalocean.com
-    Port:     25060
-    User:     django
-    Pass:     64f0543581b47de4b9abeb316e03f90b
+|   Gift      |   Description                     |   Price (Coins)   
+|-------------|-----------------------------------|-------------------|
+|   Rose      | Classic symbol of love            | 10                |
+|   Heart     | Represents affection              | 15                | 
+|   Cake      | Celebration/anniversary           | 30                |
+|   Gift Box  | Wrapped surprise gift             | 60                |
+|   Diamond   | Premium, flashy gift              | 120               |
+|   Crown     | Denotes high-value recognition    | 250               |
+|   Balloon   | Festive and fun                   | 500               |
+|   Trophy    | Achievement or award              | 1000              |
+|   Rocket    | Energetic and playful             | 2000              |
+|   Car       | Luxury and status                 | 4000              |
