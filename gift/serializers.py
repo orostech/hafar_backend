@@ -1,5 +1,7 @@
 # serializers.py (gift app)
 from rest_framework import serializers
+
+from users.models import User
 from .models import GiftType, VirtualGift
 from django.conf import settings
 
@@ -14,12 +16,19 @@ class GiftTypeSerializer(serializers.ModelSerializer):
 
     def get_image_url(self, obj):
         request = self.context.get('request')
-        return request.build_absolute_uri(obj.image.url) if obj.image else None
+        if obj.image:
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            return obj.image.url  # Fallback to a relative URL
+        return None
 
     def get_animation_url(self, obj):
         request = self.context.get('request')
-        return request.build_absolute_uri(obj.animation.url) if obj.animation else None
-
+        if obj.animation:
+            if request:
+                return request.build_absolute_uri(obj.animation.url)
+            return obj.animation.url  # Fallback to a relative URL
+        return None
 class VirtualGiftSerializer(serializers.ModelSerializer):
     gift_type = GiftTypeSerializer(read_only=True)
     sender = serializers.StringRelatedField()
@@ -33,7 +42,7 @@ class VirtualGiftSerializer(serializers.ModelSerializer):
 
 class SendGiftSerializer(serializers.Serializer):
     gift_type_id = serializers.IntegerField()
-    receiver_id = serializers.IntegerField()
+    receiver_id = serializers.CharField() 
     message = serializers.CharField(required=False, allow_blank=True)
 
     def validate(self, data):
@@ -43,8 +52,8 @@ class SendGiftSerializer(serializers.Serializer):
             raise serializers.ValidationError("Invalid gift type")
         
         try:
-            data['receiver'] = settings.AUTH_USER_MODEL.objects.get(pk=data['receiver_id'])
-        except settings.AUTH_USER_MODEL.DoesNotExist:
+            data['receiver'] = User.objects.get(id=data['receiver_id'])
+        except User.DoesNotExist:
             raise serializers.ValidationError("Receiver not found")
         
         if data['receiver'] == self.context['request'].user:
