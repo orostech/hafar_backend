@@ -26,10 +26,6 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
     code = serializers.CharField(max_length=6)
     new_password = serializers.CharField(write_only=True)
 
-
-
-
-
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     class Meta:
@@ -87,26 +83,6 @@ class VideoPreferenceSerializer(serializers.ModelSerializer):
         model = VideoPreference
         fields = ('id', 'autoplay_videos', 'video_quality', 'save_to_device')
 
-
-# class ProfileDetailSerializer(serializers.ModelSerializer):
-#     id = serializers.ReadOnlyField(source='user.id')
-#     username = serializers.CharField(source='user.username', read_only=True)
-#     of_interest = serializers.SerializerMethodField()
-
-#     class Meta:
-#         model = Profile
-#         fields = ('id', 'username', 'display_name', 'bio', 'date_of_birth', 'gender', 'body_type',
-#                   'user_type', 'is_verified', 'user_status', 'relationship_goal', 'interested_in',
-#                   'complexion', 'do_you_have_kids', 'do_you_have_pets', 'weight', 'height',
-#                   'dietary_preferences', 'smoking', 'drinking', 'relationship_status',
-#                   'instagram_handle', 'facebook_link', 'created_at', 'updated_at', 'last_seen')
-#         read_only_fields = ('user', 'created_at', 'updated_at', 'last_seen')
-
-#     def get_of_interest(self, obj):
-#         # Add any custom logic here if needed
-#         return obj.interests.count()  # For example, you can show the count of interests
-
-
 class UserBlockSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserBlock
@@ -124,9 +100,9 @@ class ProfileSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField(source='user.id')
     username = serializers.CharField(source='user.username', read_only=True)
     old_id = serializers.ReadOnlyField(source='user.old_id')
-    # of_interest = serializers.SerializerMethodField()
     photos = UserPhotoSerializer(source='user.photos',many=True, read_only=True)
     age = serializers.SerializerMethodField()
+    is_premium = serializers.SerializerMethodField()
 
     class Meta:
         model = Profile
@@ -143,29 +119,11 @@ class ProfileSerializer(serializers.ModelSerializer):
         
         read_only_fields = ('user', 'created_at', 'updated_at', 'last_seen')
 
-    # def get_of_interest(self, obj):
-    #     # Add any custom logic here if needed
-    #     return obj.interests.count()  # For example, you can show the count of interests
-
-    # photos = UserPhotoSerializer(many=True, read_only=True)
-    # age = serializers.SerializerMethodField()
-    # online_status = serializers.SerializerMethodField()
-    # distance = serializers.SerializerMethodField()
-
-    # class Meta:
-    #     model = Profile
-    #     fields = '__all__'
-    #     read_only_fields = ['user']
-
+    def get_is_premium(self, obj):
+        return obj.user.active_subscription is not None
+    
     def get_age(self, obj):
         return obj.get_age()
-
-    # def get_online_status(self, obj):
-    #     return obj.online_status
-
-    # def get_distance(self, obj):
-    #     # Implement distance calculation logic here
-    #     return None  # Replace with actual calculation
 
 
 class CurrentUserProfileSerializer(serializers.ModelSerializer):
@@ -178,8 +136,9 @@ class CurrentUserProfileSerializer(serializers.ModelSerializer):
     device_token  = serializers.ReadOnlyField(source='user.device_token')
     photos = UserPhotoSerializer(source='user.photos',many=True, read_only=True)
     wallet = WalletSerializer(source='user.wallet', read_only=True)
-    # interests = InterestSerializer(many=True, read_only=True)
     age = serializers.SerializerMethodField()
+    subscription = serializers.SerializerMethodField()
+    is_premium = serializers.SerializerMethodField()
 
     class Meta:
         model = Profile
@@ -195,7 +154,10 @@ class CurrentUserProfileSerializer(serializers.ModelSerializer):
             'user_type', 'is_verified',  'user_status', 'minimum_age_preference', 'maximum_age_preference', 'maximum_distance_preference', 'show_last_seen',
             # Information Level 4
             'email_notifications', 'push_notifications', 'in_app_notifications' , 'new_matches_notitication','new_messages_notitication', 'app_updates', 'profile_view_notitication',
-            'likes_received_notitication'
+            'likes_received_notitication',
+
+            # Infomation Level 7
+            'subscription', 'is_premium'
 
         )
         read_only_fields = (
@@ -204,6 +166,20 @@ class CurrentUserProfileSerializer(serializers.ModelSerializer):
 
     def get_age(self, obj):
         return obj.get_age()
+    
+    def get_subscription(self, obj):
+        sub = obj.user.active_subscription
+        if sub:
+            return {
+                'plan': sub.plan.name,
+                'end_date': sub.end_date,
+                'features': sub.plan.features
+            }
+        return None
+
+    def get_is_premium(self, obj):
+        return obj.user.active_subscription is not None
+
 
         
 

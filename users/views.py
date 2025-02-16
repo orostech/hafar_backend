@@ -313,7 +313,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 )
             
             # Proceed with normal retrieval
-            serializer = self.get_serializer(instance)
+            serializer = self.get_serializer(instance,context={'request': request})
             return Response(serializer.data)
             
         except Exception as e:
