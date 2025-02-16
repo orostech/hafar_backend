@@ -2,6 +2,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 
+from subscription.serializers import UserSubscriptionSerializer
 from users.const import RELATIONSHIP_CHOICES
 from wallet.serializers import WalletSerializer
 from .models import (
@@ -108,7 +109,7 @@ class ProfileSerializer(serializers.ModelSerializer):
         model = Profile
         fields = (
                 # Information Level 1
-                'id', 'old_id', 'username', 'display_name', 'bio', 'date_of_birth','age', 'gender', 'photos','body_type','last_seen',
+                'id', 'old_id', 'username', 'display_name', 'bio', 'date_of_birth','age', 'gender', 'photos','body_type','last_seen', 'is_premium',
                 # Information Level 2 
                 #  'interests',
                  'profession', 'relationship_goal', 'interested_in',   'body_type',   'complexion', 'do_you_have_kids', 'do_you_have_pets', 'weight', 'height', 'dietary_preferences', 'smoking',   
@@ -117,7 +118,7 @@ class ProfileSerializer(serializers.ModelSerializer):
                 'user_type', 'is_verified',  'user_status', 'minimum_age_preference', 'maximum_age_preference', 'maximum_distance_preference', 'show_last_seen',)
         
         
-        read_only_fields = ('user', 'created_at', 'updated_at', 'last_seen')
+        read_only_fields = ('user', 'created_at', 'updated_at', 'last_seen',)
 
     def get_is_premium(self, obj):
         return obj.user.active_subscription is not None
@@ -137,7 +138,8 @@ class CurrentUserProfileSerializer(serializers.ModelSerializer):
     photos = UserPhotoSerializer(source='user.photos',many=True, read_only=True)
     wallet = WalletSerializer(source='user.wallet', read_only=True)
     age = serializers.SerializerMethodField()
-    subscription = serializers.SerializerMethodField()
+    # subscription = serializers.SerializerMethodField()
+    subscription = UserSubscriptionSerializer(source='user.active_subscription', read_only=True)
     is_premium = serializers.SerializerMethodField()
 
     class Meta:
@@ -167,15 +169,15 @@ class CurrentUserProfileSerializer(serializers.ModelSerializer):
     def get_age(self, obj):
         return obj.get_age()
     
-    def get_subscription(self, obj):
-        sub = obj.user.active_subscription
-        if sub:
-            return {
-                'plan': sub.plan.name,
-                'end_date': sub.end_date,
-                'features': sub.plan.features
-            }
-        return None
+    # def get_subscription(self, obj):
+    #     sub = obj.user.active_subscription
+    #     if sub:
+    #         return {
+    #             'plan': sub.plan.name,
+    #             'end_date': sub.end_date,
+    #             'features': sub.plan.features
+    #         }
+    #     return None
 
     def get_is_premium(self, obj):
         return obj.user.active_subscription is not None

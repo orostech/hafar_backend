@@ -34,8 +34,14 @@ class UserSubscription(models.Model):
         ordering = ['-start_date']
 
     def save(self, *args, **kwargs):
+         # Ensure start_date is set to the current time if it's None
+        if not self.start_date:
+            self.start_date = timezone.now()
+
+          # Calculate end_date based on start_date and plan duration
         if not self.end_date:
             self.end_date = self.start_date + timezone.timedelta(days=self.plan.duration_days)
+
         super().save(*args, **kwargs)
 
     def __str__(self):
