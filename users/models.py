@@ -178,6 +178,8 @@ class User(AbstractUser, PermissionsMixin):
 
     def activate_subscription(self, plan):
         """Purchase subscription using coins"""
+        print(plan.coin_price)
+        print(self.wallet.balance)
         if self.wallet.balance >= plan.coin_price:
             if self.wallet.deduct_coins(plan.coin_price):
                 UserSubscription.objects.create(

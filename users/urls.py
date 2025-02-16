@@ -10,16 +10,10 @@ router.register(r'profiles', views.ProfileViewSet, basename='profile')
 router.register(r'photos', views.UserPhotoViewSet, basename='photo')
 router.register(r'videos', views.UserVideoViewSet, basename='video')
 router.register(r'blocks', views.UserBlockViewSet, basename='block')
-# router.register(r'interests', views.InterestViewSet, basename='interest')
 router.register(r'ratings', views.UserRatingViewSet, basename='rating')
 
 
 
-# urlpatterns = [
-#     path('', include(router.urls)),
-#     # path('register/', views.UserRegisterView.as_view(), name='register'),
-#     # path('login/', UserLoginView.as_view(), name='login'),
-# ]
 
 urlpatterns = [
      path('', include(router.urls)),
