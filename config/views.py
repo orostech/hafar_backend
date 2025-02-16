@@ -15,14 +15,8 @@ class ConfigurationViewSet(ReadOnlyModelViewSet):
     serializer_class = AppConfigurationSerializer
 
     @action(detail=False, methods=['get'])
-    def initial_load(self, request):
-        # coderate
-        # coinrate = CoinRate.objects.filter(is_active=True).latest('created_at')
-        # coindata = CoinRateSerializer(coinrate).data
-        
-        
+    def initial_load(self, request):      
         config_data = {
-            # 'coinrate': coindata,
             'app_version': {
             'min_supported': '1.0.0',
             'latest': '1.0.0',

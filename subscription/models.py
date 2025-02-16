@@ -4,15 +4,15 @@ from django.utils import timezone
 
 class SubscriptionPlan(models.Model):
     TIER_CHOICES = [
-        ('BASIC', 'Basic'),
-        ('VIP', 'VIP'),
-        ('PREMIUM', 'Premium'),
+        ('WEEKLY', 'Weekly'),
+        ('MONTH', 'Monthly'),
+        ('THREEMONTH', '3 Month'),
     ]
     
     name = models.CharField(max_length=20, choices=TIER_CHOICES, unique=True)
     coin_price = models.PositiveIntegerField()
     duration_days = models.PositiveIntegerField()
-    features = models.JSONField()
+    description = models.TextField( null=True, blank=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

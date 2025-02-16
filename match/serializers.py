@@ -55,10 +55,11 @@ class ProfileMinimalSerializer(serializers.ModelSerializer):
     profile_photo = serializers.SerializerMethodField()
     is_new_user = serializers.SerializerMethodField()
     online_status= serializers.SerializerMethodField()
+    is_premium = serializers.SerializerMethodField()
 
     class Meta:
         model = Profile
-        fields = ['id','old_id', 'display_name', 'age', 'profile_photo', 'bio','gender','is_new_user','online_status']
+        fields = ['id','old_id', 'display_name', 'age', 'profile_photo', 'bio','gender','is_new_user','online_status','is_premium']
 
     def get_age(self, obj):
         return obj.get_age()
@@ -68,6 +69,9 @@ class ProfileMinimalSerializer(serializers.ModelSerializer):
     
     def get_online_status(self,obj):
         return obj.online_status
+    
+    def get_is_premium(self, obj):
+        return obj.user.active_subscription is not None
 
     def get_profile_photo(self, obj):
         photo = obj.user.photos.filter(is_primary=True).first()
