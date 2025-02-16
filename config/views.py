@@ -6,6 +6,8 @@ from .models import AppConfiguration
 from .serializer import AppConfigurationSerializer
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from subscription.models import SubscriptionPlan
+from subscription.serializers import SubscriptionPlanSerializer
 
 
 class ConfigurationViewSet(ReadOnlyModelViewSet):
@@ -15,10 +17,12 @@ class ConfigurationViewSet(ReadOnlyModelViewSet):
     @action(detail=False, methods=['get'])
     def initial_load(self, request):
         # coderate
-        coinrate = CoinRate.objects.filter(is_active=True).latest('created_at')
-        coindata = CoinRateSerializer(coinrate).data
+        # coinrate = CoinRate.objects.filter(is_active=True).latest('created_at')
+        # coindata = CoinRateSerializer(coinrate).data
+        
+        
         config_data = {
-            'coinrate': coindata,
+            # 'coinrate': coindata,
             'app_version': {
             'min_supported': '1.0.0',
             'latest': '1.0.0',
@@ -43,6 +47,8 @@ class ConfigurationViewSet(ReadOnlyModelViewSet):
             'allow_referral_bonus': True,
             }
         }
+        config_data['coinrate'] =  CoinRateSerializer(CoinRate.objects.filter(is_active=True).latest('created_at')).data
+        config_data['subscription_plans'] = SubscriptionPlanSerializer(SubscriptionPlan.objects.filter(is_active=True),many=True).data
 
         return Response(config_data)
 

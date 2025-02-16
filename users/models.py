@@ -13,7 +13,7 @@ from django.core.exceptions import ValidationError
 from django.utils.text import slugify
 
 from gift.models import VirtualGift
-from subscription.models import PremiumSubscription
+from subscription.models import UserSubscription
 from wallet.payment_handlers import FlutterwaveHandler
 
 from .countries_states import COUNTRY_CHOICES, NIGERIA_STATES
@@ -147,28 +147,46 @@ class User(AbstractUser, PermissionsMixin):
             return True
         return False
     
-    def activate_premium(self, tier):
-        """Activate premium subscription"""
-        tiers = {
-            'BASIC': 500,
-            'VIP': 1000,
-            'PREMIUM': 2000
-        }
-        cost = tiers.get(tier)
+    # def activate_premium(self, tier):
+    #     """Activate premium subscription"""
+    #     tiers = {
+    #         'BASIC': 500,
+    #         'VIP': 1000,
+    #         'PREMIUM': 2000
+    #     }
+    #     cost = tiers.get(tier)
         
-        if cost and self.wallet.deduct_coins(cost):
-            PremiumSubscription.objects.update_or_create(
-                user=self,
-                defaults={
-                    'tier': tier,
-                    'end_date': timezone.now() + timezone.timedelta(days=30),
-                    'coin_cost': cost,
-                    'is_active': True
-                }
-            )
-            return True
-        return False
+    #     if cost and self.wallet.deduct_coins(cost):
+    #         PremiumSubscription.objects.update_or_create(
+    #             user=self,
+    #             defaults={
+    #                 'tier': tier,
+    #                 'end_date': timezone.now() + timezone.timedelta(days=30),
+    #                 'coin_cost': cost,
+    #                 'is_active': True
+    #             }
+    #         )
+    #         return True
+    #     return False
 
+    @property
+    def active_subscription(self):
+        return self.subscriptions.filter(
+            is_active=True,
+            end_date__gt=timezone.now()
+        ).first()
+
+    def activate_subscription(self, plan):
+        """Purchase subscription using coins"""
+        if self.wallet.balance >= plan.coin_price:
+            if self.wallet.deduct_coins(plan.coin_price):
+                UserSubscription.objects.create(
+                    user=self,
+                    plan=plan,
+                    is_active=True
+                )
+                return True
+        return False
 
 class Profile(models.Model):
     # Basic Information
