@@ -1,28 +1,42 @@
-from datetime import timezone
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 
-class PremiumSubscription(models.Model):
-    TIERS = [
+class SubscriptionPlan(models.Model):
+    TIER_CHOICES = [
         ('BASIC', 'Basic'),
         ('VIP', 'VIP'),
         ('PREMIUM', 'Premium'),
     ]
     
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    tier = models.CharField(max_length=10, choices=TIERS)
+    name = models.CharField(max_length=20, choices=TIER_CHOICES, unique=True)
+    coin_price = models.PositiveIntegerField()
+    duration_days = models.PositiveIntegerField()
+    features = models.JSONField()
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['coin_price']
+
+    def __str__(self):
+        return f"{self.get_name_display()} Plan - {self.coin_price} coins"
+
+class UserSubscription(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='subscriptions')
+    plan = models.ForeignKey(SubscriptionPlan, on_delete=models.CASCADE)
     start_date = models.DateTimeField(auto_now_add=True)
     end_date = models.DateTimeField()
     is_active = models.BooleanField(default=True)
-    coin_cost = models.PositiveIntegerField()
+    
+    class Meta:
+        ordering = ['-start_date']
 
-    @property
-    def remaining_days(self):
-        return (self.end_date - timezone.now()).days
+    def save(self, *args, **kwargs):
+        if not self.end_date:
+            self.end_date = self.start_date + timezone.timedelta(days=self.plan.duration_days)
+        super().save(*args, **kwargs)
 
-    def renew(self, coins):
-        if coins >= self.coin_cost:
-            self.end_date += timezone.timedelta(days=30)
-            self.save()
-            return True
-        return False
+    def __str__(self):
+        return f"{self.user.username}'s {self.plan.name} Subscription"
