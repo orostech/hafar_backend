@@ -190,7 +190,7 @@ class MLMatchingService:
                 float(relationship_goal_map.get(profile.relationship_goal, 0)),
 
                 float(response_rate),
-                float(profile.user.last_seen.timestamp()),
+                float(profile.last_seen.timestamp()),
                 float(profile.completeness_score)
             ]).reshape(1, -1)
             return features
