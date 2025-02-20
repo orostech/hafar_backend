@@ -2,6 +2,7 @@
 from math import radians, sin, cos, sqrt, atan2
 from datetime import timedelta
 import logging
+from users.models import Profile
 from django.db import transaction
 from rest_framework import viewsets, status, pagination
 from rest_framework.decorators import action
@@ -11,6 +12,8 @@ from django.db.models import Q
 from django.core.cache import cache
 from django.utils import timezone
 from .services import MatchingService
+from django.contrib.gis.db.models.functions import Distance
+from django.contrib.gis.geos import Point
 
 # from users.models import Profile
 from .models import Like, Dislike, Match, SwipeLimit, UserSwipeAction, Visit
@@ -24,6 +27,23 @@ logger = logging.getLogger(__name__)
 DAILY_LIKE_LIMIT = 30
 DAILY_SUPER_LIKE_LIMIT = 5
 
+def get_potential_matches(self, user, max_distance_km=100):
+    """Get matches using PostGIS spatial queries"""
+    user_profile = user.profile
+    if not user_profile.location:
+        return Profile.objects.none()
+
+    ref_location = user_profile.location
+    return (
+        Profile.objects.exclude(user=user)
+        .annotate(distance=Distance('location', ref_location))
+        .filter(
+            distance__lte=max_distance_km*1000,  # Convert km to meters
+            user__is_active=True,
+            profile_visibility='VE'
+        )
+        .order_by('distance')
+    )
 
 def get_swipe_limits(user):
     cache_key = f'swipe_limits_{user.id}'
@@ -268,11 +288,14 @@ class MatchActionViewSet(viewsets.ModelViewSet):
             'relationship_goal': request.query_params.get('relationship_goal'),
             'interests': request.query_params.getlist('interests'),
             'show_verified_only': request.query_params.get('show_verified_only', 'false') == 'true',
-            'lifestyle': dict(request.query_params.lists())  # Handle multiple lifestyle params
+            'lifestyle': dict(request.query_params.lists()),
+            'online_status': request.query_params.get('online'),
+            'verified_only': request.query_params.get('verified') == 'true',
+            'has_stories': request.query_params.get('stories') == 'true'
         }
         matching_service = MatchingService(request.user)
         potential_matches = matching_service.get_potential_matches(limit=100) 
-        print(f'see {len(potential_matches)}') 
+        # print(f'see {len(potential_matches)}') 
         paginator = pagination.PageNumberPagination()  
         result_page = paginator.paginate_queryset(potential_matches, request,)
         serializer = ProfileMinimalSerializer(result_page, many=True, 

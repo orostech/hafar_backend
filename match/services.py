@@ -9,6 +9,8 @@ from users.models import Profile, UserBlock
 import numpy as np
 from dateutil.relativedelta import relativedelta
 from sklearn.preprocessing import MinMaxScaler
+from django.contrib.gis.db.models.functions import Distance
+from django.contrib.gis.measure import D
 
 
 class MatchingService:
@@ -77,16 +79,17 @@ class MatchingService:
             'created_at'  # Secondary ordering can be adjusted as needed
         )
 
+                # Spatial filtering
+        if self.user_profile.location:
+            base_queryset = base_queryset.annotate(
+                distance=Distance('location', self.user_profile.location)
+            ).filter(
+                distance__lte=D(km=self.user_profile.maximum_distance_preference)
+            ).order_by('distance')
         print(f'remaining is {len(base_queryset)}')
         return base_queryset
-        # return Profile.objects.filter(
-        #     # Basic filtering
-        #     gender=self.user_profile.interested_in,
-        #     user_status__in= ['PA', 'A'],  # Pending and Active accounts only
-        #     profile_visibility='VE'  # Visible to Everyone
-        # ).exclude(
-        #     Q(user__in=excluded_users) | Q(user=self.user)
-        # )
+     
+
 
     def _score_profiles(self, queryset):
         """Score each profile based on multiple criteria"""
