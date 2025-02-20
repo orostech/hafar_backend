@@ -1,4 +1,5 @@
 # match/ml_matching.py
+from datetime import timedelta
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
@@ -6,7 +7,8 @@ import numpy as np
 from django.db.models import Count, Q
 from .models import UserSwipeAction, Match
 from users.models import Profile
-
+from django.utils import timezone
+from chat.models import Message
 
 class MLMatchingService:
     def __init__(self, user):
@@ -162,6 +164,15 @@ class MLMatchingService:
 
             # Map 'relationship_goal' field
             relationship_goal_map = {'NSR': 0, 'CAS': 1, 'LTR': 2, 'MAR': 3}
+
+            # response_rate = profile.user.received_messages.filter(
+            # created_at__gte=timezone.now()-timedelta(days=7)
+            #  ).count() / (profile.user.sent_messages.count() or 1)
+            response_rate = Message.objects.filter(
+                chat__user2=profile.user,
+                created_at__gte=timezone.now()-timedelta(days=7)
+            ).count() / (Message.objects.filter(sender=profile.user).count() or 1)
+
           
             features = np.array([
                 float(profile.get_age() or 0),
@@ -176,7 +187,11 @@ class MLMatchingService:
                 float(smoking_map.get(profile.smoking, 0)),
                 # Use updated mapping
                 float(drinking_map.get(profile.drinking, 0)),
-                float(relationship_goal_map.get(profile.relationship_goal, 0))
+                float(relationship_goal_map.get(profile.relationship_goal, 0)),
+
+                float(response_rate),
+                float(profile.user.last_seen.timestamp()),
+                float(profile.completeness_score)
             ]).reshape(1, -1)
             return features
         except Exception as e:

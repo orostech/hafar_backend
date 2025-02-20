@@ -11,10 +11,11 @@ from django.contrib.auth.hashers import make_password
 from django.core.validators import FileExtensionValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
 from django.utils.text import slugify
-
+from django.contrib.gis.db import models as gis_models
 from gift.models import VirtualGift
 from subscription.models import UserSubscription
 from wallet.payment_handlers import FlutterwaveHandler
+from django.contrib.postgres.indexes import GistIndex
 
 from .countries_states import COUNTRY_CHOICES, NIGERIA_STATES
 from .const import ( ACCOUNT_STATUS_CHOICES, BODY_TYPE_CHOICES, COMPLEXION_CHOICES, DIETARY_PREFERENCES_CHOICES, DO_YOU_HAVE_KIDS_CHOICES, DO_YOU_HAVE_PETS_CHOICES, DRINKING_CHOICES, GENDER_CHOICES, INTEREST_CATEGORIES, INTEREST_IN_CHOICES, RELATIONSHIP_CHOICES, RELATIONSHIP_STATUS_CHOICES, SMOKING_CHOICES, USER_TYPE_CHOICES, VERIFICATION_STATUS_CHOICES, VISIBILITY_CHOICES)
@@ -202,7 +203,8 @@ class Profile(models.Model):
     profession = models.CharField(max_length=15, null=True, blank=True)
 
     # Location Fields
-    # location = geodjango_models.PointField(null=True, blank=True)  # Requires PostGIS
+    # location = gis_models.PointField(null=True, blank=True)  # Requires PostGIS
+    location = gis_models.PointField(null=True, blank=True, geography=True)
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
     address = models.CharField(max_length=255, blank=True)
@@ -280,6 +282,15 @@ class Profile(models.Model):
     likes_received_notitication = models.BooleanField(default=True)
 
     welcome_email_sent = models.BooleanField(default=False)
+
+    class Meta:
+        indexes = [
+            GistIndex(fields=['location']),
+            models.Index(fields=['gender', 'relationship_goal']),
+            models.Index(fields=['last_seen']),
+            models.Index(fields=['created_at']),
+        ]
+
     # Ratings & Reviews
     def average_rating(self):
         ratings = self.ratings_received.all()

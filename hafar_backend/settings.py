@@ -6,6 +6,15 @@ from decouple import config, Csv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# # Add after your DATABASES configuration
+# if os.name == 'nt':  # For Windows
+#     # GDAL_LIBRARY_PATH = r'C:\OSGeo4W\bin\gdal304.dll'
+#     os.environ['GDAL_DATA'] = r'C:\Program Files\GDAL\gdal-data'
+#     os.environ['GDAL_LIBRARY_PATH'] = r'C:\Program Files\GDAL\gdal303.dll'
+# else:  # For Linux/Ubuntu
+#     GDAL_LIBRARY_PATH = '/usr/lib/libgdal.so'
+#     GEOS_LIBRARY_PATH = '/usr/lib/libgeos_c.so'
+
 DEBUG = config('DEBUG', default=False, cast=bool)
 
 
@@ -23,6 +32,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.gis',
 
     # APPS
     'rest_framework',
