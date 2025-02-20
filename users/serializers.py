@@ -104,6 +104,8 @@ class ProfileSerializer(serializers.ModelSerializer):
     photos = UserPhotoSerializer(source='user.photos',many=True, read_only=True)
     age = serializers.SerializerMethodField()
     is_premium = serializers.SerializerMethodField()
+    is_new_user = serializers.SerializerMethodField()
+    online_status= serializers.SerializerMethodField()
 
     class Meta:
         model = Profile
@@ -112,10 +114,10 @@ class ProfileSerializer(serializers.ModelSerializer):
                 'id', 'old_id', 'username', 'display_name', 'bio', 'date_of_birth','age', 'gender', 'photos','body_type','last_seen', 'is_premium',
                 # Information Level 2 
                 #  'interests',
-                 'profession', 'relationship_goal', 'interested_in',   'body_type',   'complexion', 'do_you_have_kids', 'do_you_have_pets', 'weight', 'height', 'dietary_preferences', 'smoking',   
+                 'profession', 'relationship_goal','relationship_status', 'interested_in',   'body_type',   'complexion', 'do_you_have_kids', 'do_you_have_pets', 'weight', 'height','drinking', 'dietary_preferences', 'smoking',   
                 # Information Level 3
                 'latitude', 'longitude', 'address', 'state', 'country', 'selected_address', 'selected_state', 'selected_country', 'selected_lga','show_online_status', 'show_distance',
-                'user_type', 'is_verified',  'user_status', 'minimum_age_preference', 'maximum_age_preference', 'maximum_distance_preference', 'show_last_seen',)
+                'user_type', 'is_verified',  'user_status', 'minimum_age_preference', 'maximum_age_preference', 'maximum_distance_preference', 'show_last_seen','is_new_user','online_status',)
         
         
         read_only_fields = ('user', 'created_at', 'updated_at', 'last_seen',)
@@ -125,6 +127,12 @@ class ProfileSerializer(serializers.ModelSerializer):
     
     def get_age(self, obj):
         return obj.get_age()
+        
+    def get_is_new_user(self, obj):
+        return obj.is_new_user
+
+    def get_online_status(self,obj):
+        return obj.online_status
 
 
 class CurrentUserProfileSerializer(serializers.ModelSerializer):
