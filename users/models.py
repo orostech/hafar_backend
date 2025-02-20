@@ -280,7 +280,18 @@ class Profile(models.Model):
     app_updates = models.BooleanField(default=True)
     profile_view_notitication = models.BooleanField(default=True)
     likes_received_notitication = models.BooleanField(default=True)
-
+    message_price = models.PositiveIntegerField(
+        default=0,
+        help_text="Coins required to message this user directly"
+    )
+    allow_vip_direct_messages = models.BooleanField(
+        default=True,
+        help_text="Allow VIP users to message directly"
+    )
+    require_initial_request = models.BooleanField(
+        default=True,
+        help_text="Require message requests for first contact"
+    )
     welcome_email_sent = models.BooleanField(default=False)
 
     class Meta:
@@ -391,7 +402,7 @@ class Profile(models.Model):
             self.latitude,
             self.longitude,
             # self.interests.exists(),
-            self.photos.exists()
+            self.user.photos.exists() 
         ]
         completed = sum(1 for field in required_fields if field)
         return completed / len(required_fields)

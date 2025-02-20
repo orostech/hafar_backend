@@ -97,9 +97,13 @@ class MessageRequestViewSet(viewsets.ModelViewSet):
     def respond(self, request, pk=None):
         message_request = self.get_object()
         action = request.data.get('action')
-        
+    
         if message_request.receiver != request.user:
             return Response({'error': 'Not authorized'}, status=403)
+        
+        if message_request.is_paid:
+            return self.handle_paid_request(message_request, action)
+      
         
         if action == 'accepted':
            chat =  message_request.accept()
@@ -112,6 +116,21 @@ class MessageRequestViewSet(viewsets.ModelViewSet):
         
         return Response({'status': f'request {action}'})
     
+    def handle_paid_request(self, message_request, action):
+        if action == 'rejected':
+            # Refund coins
+            receiver_wallet = message_request.receiver.wallet
+            sender_wallet = message_request.sender.wallet
+            if receiver_wallet.transfer_coins(sender_wallet, message_request.coins_paid):
+                message_request.delete()
+                return Response({'status': 'request rejected - coins refunded'})
+            return Response({'error': 'Refund failed'}, status=500)
+        
+        if action == 'accepted':
+            message_request.create_chat_message()
+            return Response({'status': 'message accepted and created'})
+        
+        return Response({'error': 'Invalid action'}, status=400)
 
 class MessageSearchView(views.APIView):
     def get(self, request):
