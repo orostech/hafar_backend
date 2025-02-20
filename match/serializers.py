@@ -59,7 +59,7 @@ class ProfileMinimalSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Profile
-        fields = ['id','old_id', 'display_name', 'age', 'profile_photo', 'bio','gender','is_new_user','online_status','is_premium']
+        fields = ['id','old_id', 'display_name', 'age', 'profile_photo', 'bio','gender','location','is_new_user','online_status','is_premium']
 
     def get_age(self, obj):
         return obj.get_age()
