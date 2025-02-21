@@ -2,8 +2,6 @@ from rest_framework import viewsets, permissions, status,views
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.parsers import FileUploadParser
-
-from users.models import User
 from .permissions import ChatPermissions
 from .throttling import MessageRateThrottle
 from .models import *
@@ -11,7 +9,6 @@ from .serializers import *
 from django.core.exceptions import ValidationError
 from match.models import Match
 from django.contrib.postgres.search import  SearchRank
-from django.db.models import Q
 
 class ChatViewSet(viewsets.ModelViewSet):
     serializer_class = ChatSerializer
@@ -100,9 +97,13 @@ class MessageRequestViewSet(viewsets.ModelViewSet):
     def respond(self, request, pk=None):
         message_request = self.get_object()
         action = request.data.get('action')
-        
+    
         if message_request.receiver != request.user:
             return Response({'error': 'Not authorized'}, status=403)
+        
+        if message_request.is_paid:
+            return self.handle_paid_request(message_request, action)
+      
         
         if action == 'accepted':
            chat =  message_request.accept()
@@ -115,6 +116,22 @@ class MessageRequestViewSet(viewsets.ModelViewSet):
         
         return Response({'status': f'request {action}'})
     
+    def handle_paid_request(self, message_request, action):
+        if action == 'rejected':
+            # Refund coins
+            receiver_wallet = message_request.receiver.wallet
+            sender_wallet = message_request.sender.wallet
+            if receiver_wallet.transfer_coins(sender_wallet, message_request.coins_paid):
+                message_request.delete()
+                return Response({'status': 'request rejected - coins refunded'})
+            return Response({'error': 'Refund failed'}, status=500)
+        
+        if action == 'accepted':
+            message_request.create_chat_message()
+            return Response({'status': 'message accepted and created'})
+        
+        return Response({'error': 'Invalid action'}, status=400)
+
 class MessageSearchView(views.APIView):
     def get(self, request):
         query = request.GET.get('q')
@@ -128,77 +145,7 @@ class MessageSearchView(views.APIView):
         ).order_by('-rank')
         
         return Response(MiniMessageSerializer(messages, many=True).data)
-
-class SendInitialMessageView(views.APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def post(self, request):
-        receiver_id = request.data.get('receiver_id')
-        content = request.data.get('content')
-        content_type = request.data.get('content_type', 'TEXT')
-
-        try:
-            receiver = User.objects.get(id=receiver_id)
-        except User.DoesNotExist:
-            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-
-        sender = request.user
-
-        # Check existing chat
-        chat = Chat.objects.filter(
-            (Q(user1=sender, user2=receiver) | Q(user1=receiver, user2=sender))
-        ).first()
-
-        if chat:
-            if chat.requires_acceptance and not chat.is_accepted:
-                return Response({'error': 'Chat pending acceptance'}, status=status.HTTP_403_FORBIDDEN)
-            # Send message via existing chat
-            message = Message.objects.create(
-                chat=chat,
-                sender=sender,
-                content=content,
-                content_type=content_type
-            )
-            serializer = MiniMessageSerializer(message)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            # Check for active match
-            match_exists = Match.objects.filter(
-                (Q(user1=sender, user2=receiver) | Q(user1=receiver, user2=sender)),
-                is_active=True
-            ).exists()
-
-            if match_exists:
-                # Create chat and send message
-                chat = Chat.objects.create(
-                    user1=sender,
-                    user2=receiver,
-                    requires_acceptance=False,
-                    is_accepted=True
-                )
-                message = Message.objects.create(
-                    chat=chat,
-                    sender=sender,
-                    content=content,
-                    content_type=content_type
-                )
-                serializer = MiniMessageSerializer(message, context={'request': request})
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            else:
-                # Create message request
-                message_request, created = MessageRequest.objects.get_or_create(
-                    sender=sender,
-                    receiver=receiver,
-                    defaults={
-                        'message': content,
-                        'status': 'PENDING'
-                    }
-                )
-                if created:
-                    serializer = MessageRequestSerializer(message_request)
-                    return Response(serializer.data, status=status.HTTP_201_CREATED)
-                else:
-                    return Response({'error': 'Request already sent'}, status=status.HTTP_400_BAD_REQUEST)
+    
 
 class MediaUploadView(views.APIView):
     parser_classes = [FileUploadParser]
