@@ -5,6 +5,8 @@ from django.utils import timezone
 # from datetime import timedelta
 from match.models import Match
 from django.contrib.postgres.search import SearchVectorField
+
+from wallet.models import Transaction
 # from cryptography.hazmat.primitives import serialization
 
 class Chat(models.Model):
@@ -159,6 +161,9 @@ class MessageRequest(models.Model):
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='PENDING')
     created_at = models.DateTimeField(auto_now_add=True)
     message = models.TextField(blank=True)
+    coins_paid = models.PositiveIntegerField(default=0)
+    is_paid = models.BooleanField(default=False)
+    payment_reference = models.CharField(max_length=100, blank=True)
     
     class Meta:
         unique_together = ('sender', 'receiver')
@@ -184,14 +189,38 @@ class MessageRequest(models.Model):
                 chat=chat,
                 content_type='TEXT',  # Assuming text type for the initial request message
                 content=self.message,
-                # created_at=timezone.now()
+                created_at=timezone.now()
             )
+        if self.is_paid:
+            Transaction.objects.create(
+                user=self.sender,
+                amount=self.coins_paid,
+                transaction_type='SPEND',
+                description=f"Paid message to {self.receiver.username}"
+            )
+
         return chat
         
 
     def reject(self):
         self.status = 'REJECTED'
         self.save()
+
+    # def create_chat_message(self):
+    #     if self.status == 'ACCEPTED' and self.chat.is_accepted:
+    #         Message.objects.create(
+    #             sender=self.sender,
+    #             chat=self.chat,
+    #             content=self.message,
+    #             content_type='TEXT'
+    #         )
+    #         if self.is_paid:
+    #             Transaction.objects.create(
+    #                 user=self.sender,
+    #                 amount=self.coins_paid,
+    #                 transaction_type='SPEND',
+    #                 description=f"Paid message to {self.receiver.username}"
+    #             )
 
 # class DeviceKey(models.Model):
 #     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
