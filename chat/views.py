@@ -121,18 +121,46 @@ class MessageRequestViewSet(viewsets.ModelViewSet):
         receiver_id = request.query_params.get('receiver_id')
         if not receiver_id:
             return Response({'error': 'receiver_id is required'}, status=status.HTTP_400_BAD_REQUEST)
-
+        print('oya 0p')
         try:
             message_request = MessageRequest.objects.get(
-                # sender=request.user,
-                # receiver_id=receiver_id
                 (Q(sender=request.user, receiver_id=receiver_id) |
                  Q(sender=receiver_id, receiver_id=request.user))
             )
+            print('pop')
+            if message_request.status == 'ACCEPTED':
+                print('oya')
+                try:
+                    chat = Chat.objects.filter(
+                        (Q(user1=self.request.user), Q(user2_id=receiver_id)) |
+                        (Q(user1_id=receiver_id), Q(user2=self.request.user))
+                    ).filter(is_active=True)
+                    return Response({
+                        'type': 'chat',
+                        'data': ChatSerializer(chat, context={'request': request}).data, }, status=status.HTTP_200_OK)
+
+                except:
+                    pass
             serializer = self.get_serializer(message_request)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            print('oya 12')
+            return Response({
+                'type': 'message_request',
+                'data': serializer.data, }, status=status.HTTP_200_OK)
         except MessageRequest.DoesNotExist:
-            return Response({'status': 'no_request'}, status=status.HTTP_200_OK)
+            try:
+                chat = Chat.objects.filter(
+                    (Q(user1=request.user) & Q(user2_id=receiver_id)) |
+                    (Q(user1_id=receiver_id) & Q(user2=request.user))
+                ).filter(is_active=True).first()
+
+                if chat:
+                    return Response({
+                        'type': 'chat',
+                        'data': ChatSerializer(chat, context={'request': request}).data
+                    }, status=status.HTTP_200_OK)
+            except Chat.DoesNotExist:
+                pass
+            return Response({'type': 'no_request'}, status=status.HTTP_200_OK)
 
 
 class MessageSearchView(views.APIView):

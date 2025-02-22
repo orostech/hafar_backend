@@ -32,21 +32,23 @@ class DislikeSerializer(serializers.ModelSerializer):
         read_only_fields = ['disliker', 'created_at']
 
 
-class MatchSerializer(serializers.ModelSerializer):
-    user1_profile = serializers.SerializerMethodField()
-    user2_profile = serializers.SerializerMethodField()
+# class MatchSerializer(serializers.ModelSerializer):
+#     user1_profile = serializers.SerializerMethodField()
+#     user2_profile = serializers.SerializerMethodField()
 
-    class Meta:
-        model = Match
-        fields = ['id', 'user1', 'user2', 'created_at', 'is_active', 'last_interaction',
-                 'user1_profile', 'user2_profile']
-        read_only_fields = ['created_at', 'last_interaction']
+#     class Meta:
+#         model = Match
+#         fields = ['id', 'user1', 'user2', 'created_at', 'is_active', 'last_interaction',
+#                  'user1_profile', 'user2_profile']
+#         read_only_fields = ['created_at', 'last_interaction']
 
-    def get_user1_profile(self, obj):
-        return ProfileMinimalSerializer(obj.user1.profile).data
+#     def get_user1_profile(self, obj):
+#         return ProfileMinimalSerializer(obj.user1.profile).data
 
-    def get_user2_profile(self, obj):
-        return ProfileMinimalSerializer(obj.user2.profile).data
+#     def get_user2_profile(self, obj):
+#         return ProfileMinimalSerializer(obj.user2.profile).data
+
+
 
 class ProfileMinimalSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField(source='user.id')
@@ -109,7 +111,8 @@ class MatchSerializer(serializers.ModelSerializer):
     last_interaction_at = serializers.SerializerMethodField()
     class Meta:
         model = Match
-        fields = ['user1', 'user2','profile', 'is_active','last_interaction_at', 'last_interaction',
+        fields = ['user1', 'user2','profile', 'is_active',
+                  'last_interaction_at', 'last_interaction',
                   ]
         read_only_fields = ['created_at', 'last_interaction']
 

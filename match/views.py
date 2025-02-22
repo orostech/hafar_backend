@@ -86,7 +86,9 @@ class MatchActionViewSet(viewsets.ModelViewSet):
     serializer_class = MatchSerializer
 
     def get_serializer_context(self):
-        return super().get_serializer_context()+ {'request': self.request}
+        context = super().get_serializer_context()
+        context.update({'request': self.request})
+        return context
 
     def get_serializer_class(self):
         if self.action in ['like', 'super_like']:

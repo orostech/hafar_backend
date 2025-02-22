@@ -1,7 +1,10 @@
 from datetime import timezone
+from functools import partial
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.db import transaction
+
+from match.serializers import ProfileMinimalSerializer
 
 from .services import FirebaseNotificationService
 from .email_service import EmailService
@@ -16,8 +19,9 @@ logger = logging.getLogger(__name__)
 email_service = EmailService()
 
 def send_ws_notification(user_id, action_type, data):
-    print(user_id)
-    print(action_type)
+    # print(data)
+    if 'profile' in data and 'id' in data['profile']:
+        data['profile']['id'] = str(data['profile']['id'])
     print(data)
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
@@ -25,7 +29,7 @@ def send_ws_notification(user_id, action_type, data):
         {
             'type': 'send_activity',
             'action_type': action_type,
-            'data': data
+            'data': data,
         }
     )
 
@@ -44,16 +48,20 @@ def create_notification_and_send_push(recipient, actor, verb, target_id,
 
     # Check push notification preferences
     profile = recipient.profile
+    profileData = ProfileMinimalSerializer(profile).data
     if getattr(profile, push_enabled_field, False) and profile.push_notifications:
         try:
+            title = title_template % actor.profile.display_name if "%s" in title_template else title_template
+            body = body_template % actor.profile.display_name if "%s" in body_template else body_template
             FirebaseNotificationService.send_push_notification(
                 recipient=recipient,
-                title=title_template % actor.profile.display_name,
-                body=body_template % actor.profile.display_name,
+                title=title,
+                body=body,
                 data={
                     'type': verb,
                     'id': str(target_id),
-                    'actor_id': str(actor.id)
+                    'actor_id': str(actor.id),
+                    'profile':profileData
                 }
             )
         except Exception as e:
@@ -62,54 +70,34 @@ def create_notification_and_send_push(recipient, actor, verb, target_id,
     send_ws_notification(
         recipient.id, 
         'notification',
-        {'type': verb, 'message': body_template}
+        {'type': verb, 'message': body_template, 'profile':profileData}
     )
 
-    # Send WebSocket notification
-    # channel_layer = get_channel_layer()
-    # async_to_sync(channel_layer.group_send)(
-    #     f'user_{recipient.id}',
-    #     {
-    #         'type': 'send_notification',
-    #         'data': {
-    #             'type': verb,
-    #             'message': body_template % actor.profile.display_name,
-    #             'timestamp': str(timezone.now())
-    #         }
-    #     }
-    # )
 
 @receiver(post_save, sender=Like)
 def handle_like_notification(sender, instance, created, **kwargs):
-    print(f'qwerty mm {instance.liked.id}')
-    send_ws_notification(
-        instance.liked.id, 
-        'notification', 
-        {'type': instance.like_type, 'message': 'body_template'}
-    )
-    # if created:
-    #     try:
-    #         verb = 'SUPER_LIKE' if instance.like_type == 'SUPER' else 'LIKE'
-    #         title = "Super Like from %s!" if verb == 'SUPER_LIKE' else "New Like from %s!"
-    #         body = "You've been super liked!" if verb == 'SUPER_LIKE' else "Someone likes you!"
-    #         print('qwe 11')
-    #         transaction.on_commit(lambda: create_notification_and_send_push(
-    #             recipient=instance.liked,
-    #             actor=instance.liker,
-    #             verb=verb,
-    #             target_id=instance.id,
-    #             title_template=title,
-    #             body_template=body,
-    #             push_enabled_field='likes_received_notitication'
-    #         ))
-    #         print('qwe 1qw1')
-    #     except Exception as e:
-    #         logger.error(f"Like notification failed: {str(e)}")
+   
+    if created:
+        try:
+            verb = 'SUPER_LIKE' if instance.like_type == 'SUPER' else 'LIKE'
+            title = "Super Like from %s!" if verb == 'SUPER_LIKE' else "New Like from %s!"
+            body = "You've been super liked!" if verb == 'SUPER_LIKE' else "Someone likes you!"
+            transaction.on_commit(lambda: create_notification_and_send_push(
+                recipient=instance.liked,
+                actor=instance.liker,
+                verb=verb,
+                target_id=instance.id,
+                title_template=title,
+                body_template=body,
+                push_enabled_field='likes_received_notitication'
+            ))
+        except Exception as e:
+            logger.error(f"Like notification failed: {str(e)}")
         
-    #     try:
-    #         email_service.send_like_notification(instance)
-    #     except Exception as e:
-    #         logger.error(f"Like email notification failed: {str(e)}")
+        try:
+            email_service.send_like_notification(instance)
+        except Exception as e:
+            logger.error(f"Like email notification failed: {str(e)}")
 
 @receiver(post_save, sender=Visit)
 def handle_visit_notification(sender, instance, created, **kwargs):
@@ -139,7 +127,8 @@ def handle_match_notification(sender, instance, created, **kwargs):
         try:
             for user, other_user in [(instance.user1, instance.user2), 
                                    (instance.user2, instance.user1)]:
-                transaction.on_commit(lambda: create_notification_and_send_push(
+                notification_task = partial(
+                    create_notification_and_send_push,
                     recipient=user,
                     actor=other_user,
                     verb='MATCH',
@@ -147,7 +136,8 @@ def handle_match_notification(sender, instance, created, **kwargs):
                     title_template="You matched with %s!",
                     body_template="It's a match! Start chatting with %s",
                     push_enabled_field='new_matches_notitication'
-                ))
+                )
+                transaction.on_commit(notification_task)
         except Exception as e:
             logger.error(f"Match notification failed: {str(e)}")
 
@@ -155,6 +145,9 @@ def handle_match_notification(sender, instance, created, **kwargs):
             email_service.send_match_notification(instance)
         except Exception as e:
             logger.error(f"Match email notification failed: {str(e)}")
+
+
+
 
 @receiver(post_save, sender=Message)
 def handle_message_notification(sender, instance, created, **kwargs):
