@@ -57,7 +57,7 @@ class Match(models.Model):
     is_active = models.BooleanField(default=True)
     last_interaction = models.DateTimeField(auto_now=True)
     is_premium = models.BooleanField(default=False)
-    premium_features = models.JSONField(default=dict)
+    # premium_features = models.JSONField(default=dict)
     
     class Meta:
         unique_together = ('user1', 'user2')

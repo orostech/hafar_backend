@@ -100,5 +100,13 @@ class MessageRequestSerializer(serializers.ModelSerializer):
         model = MessageRequest
         fields = ['id', 'participant', 'receiver', 'status', 'message', 'created_at']
 
+    # def get_participant(self, obj):
+    #     return  ProfileMinimalSerializer(obj.sender.profile).data
+    
     def get_participant(self, obj):
-        return  ProfileMinimalSerializer(obj.sender.profile).data
+        user = self.context['request'].user
+        other_user = obj.receiver if user == obj.sender else obj.sender
+        return  ProfileMinimalSerializer(other_user.profile).data
+    
+
+    

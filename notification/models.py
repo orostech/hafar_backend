@@ -4,11 +4,12 @@ from django.conf import settings
 class Notification(models.Model):
     NOTIFICATION_TYPES = [
         ('LIKE', 'Like'),
-        ('MATCH', 'Match'),
-        ('VISIT', 'Profile Visit'),
-        ('MESSAGE', 'New Message'),
         ('SUPER_LIKE', 'Super Like'),
+        ('MATCH', 'Match'),
+        ('MESSAGE', 'Message'),
+        ('VISIT', 'Profile Visit'),
     ]
+
 
     recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='notifications')
     actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='acted_notifications')
@@ -18,7 +19,7 @@ class Notification(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.recipient}"
+        return f"{self.recipient} - {self.verb}"
 
     class Meta:
         ordering = ['-created_at']

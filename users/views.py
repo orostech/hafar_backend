@@ -13,7 +13,6 @@ from .serializers import (
     CurrentUserProfileSerializer, PasswordResetConfirmSerializer, PasswordResetRequestSerializer, PasswordResetVerifySerializer, ProfileSerializer, UserPhotoSerializer, RegisterSerializer, UserVideoSerializer,
     UserBlockSerializer, UserRatingSerializer
 )
-# auth_views.py
 from django.contrib.auth.hashers import make_password
 from rest_framework import status, views
 from rest_framework.response import Response
@@ -304,14 +303,11 @@ class ProfileViewSet(viewsets.ModelViewSet):
             
             # # Only record visits for other users' profiles
             if request.user != instance.user:
-                print(request.user)
-                print(instance.user)
                 # Record the visit using get_or_create to prevent duplicates
                 Visit.objects.get_or_create(
                     visitor=request.user,
                     visited=instance.user
                 )
-            
             # Proceed with normal retrieval
             serializer = self.get_serializer(instance,context={'request': request})
             return Response(serializer.data)

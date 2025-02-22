@@ -14,7 +14,6 @@ class Chat(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     last_activity = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
-    
     # Permission flags
     requires_acceptance = models.BooleanField(default=True)
     is_accepted = models.BooleanField(default=False)

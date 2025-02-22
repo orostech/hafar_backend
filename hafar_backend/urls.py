@@ -5,6 +5,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, Spec
 from django.conf import settings
 from django.conf.urls.static import static
 
+from notification.services import FirebaseNotificationService
 from wallet.webhooks import flutterwave_webhook
 class APIRootView(views.APIView):
     """
@@ -26,8 +27,22 @@ v1patterns = [
 apipatterns = [
     path('', include(v1patterns)),
 ]
-
-
+class APIIRootView(views.APIView):
+    """
+    A simple view to respond to GET requests to the root of the API.
+    """
+    def get(self, request):
+        FirebaseNotificationService.send_push_notification(
+                recipient=request.user,
+                title='title_template',
+                body='body_template',
+                data={
+                    # 'type': verb,
+                    # 'id': str(18392),
+                    # 'actor_id': str(actor.id)
+                }
+            )
+        return views.Response({"message": "access."})
 urlpatterns = [
     # YOUR PATTERNS
     path("", APIRootView.as_view(), name='api-root'),
@@ -37,7 +52,11 @@ urlpatterns = [
     path('test/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('admin/', admin.site.urls),
+     path("mm/", APIIRootView.as_view(), name='apii-root'),
+
     ]
+
+
 
 
 # Serve media files during development
