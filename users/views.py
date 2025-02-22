@@ -1,7 +1,7 @@
 # views.py
 import requests
 from rest_framework import viewsets, generics, filters,exceptions 
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.db.models import Q, F
@@ -26,6 +26,8 @@ from django.utils.crypto import get_random_string
 from .serializers import RegisterSerializer, LoginSerializer
 from .models import Profile
 from match.models import Visit
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 class PasswordResetRequestView(views.APIView):
     permission_classes = [AllowAny]
@@ -332,7 +334,6 @@ class ProfileViewSet(viewsets.ModelViewSet):
         """
         profile = self.request.user.profile
         print( request.FILES.getlist('images'));
-        # self.object = self.get_object()
         serializer = CurrentUserProfileSerializer(
             profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -342,6 +343,19 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 UserPhoto.objects.create(user=request.user, image=image)
 
         self.perform_update(serializer)
+         # Send WebSocket update
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f'user_{request.user.id}',
+            {
+                'type': 'profile_update',
+                'data': {
+                    'message': 'Profile updated',
+                    'data': serializer.data,
+                    'updated_fields': list(request.data.keys())
+                }
+            }
+        )
         return Response(serializer.data)
 
     @action(detail=False, methods=['GET'])
@@ -395,3 +409,14 @@ class UserRatingViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(rating_user=self.request.user.profile)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def update_device_token(request):
+    user = request.user
+    device_token = request.data.get('device_token')
+    if device_token:
+        user.device_token = device_token
+        user.save()
+        return Response({'status': 'success'})
+    return Response({'error': 'Invalid token'}, status=400)

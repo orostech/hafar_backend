@@ -1,3 +1,4 @@
+from datetime import timezone
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.db import transaction
@@ -7,10 +8,26 @@ from .email_service import EmailService
 from match.models import Like, Visit, Match
 from chat.models import Message  # Assuming you have a chat app
 from .models import Notification
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 import logging
 
 logger = logging.getLogger(__name__)
 email_service = EmailService()
+
+def send_ws_notification(user_id, action_type, data):
+    print(user_id)
+    print(action_type)
+    print(data)
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        f'user_{user_id}',
+        {
+            'type': 'send_activity',
+            'action_type': action_type,
+            'data': data
+        }
+    )
 
 
 def create_notification_and_send_push(recipient, actor, verb, target_id, 
@@ -42,31 +59,57 @@ def create_notification_and_send_push(recipient, actor, verb, target_id,
         except Exception as e:
             logger.error(f"Firebase notification failed: {str(e)}")
 
+    send_ws_notification(
+        recipient.id, 
+        'notification',
+        {'type': verb, 'message': body_template}
+    )
+
+    # Send WebSocket notification
+    # channel_layer = get_channel_layer()
+    # async_to_sync(channel_layer.group_send)(
+    #     f'user_{recipient.id}',
+    #     {
+    #         'type': 'send_notification',
+    #         'data': {
+    #             'type': verb,
+    #             'message': body_template % actor.profile.display_name,
+    #             'timestamp': str(timezone.now())
+    #         }
+    #     }
+    # )
+
 @receiver(post_save, sender=Like)
 def handle_like_notification(sender, instance, created, **kwargs):
-    if created:
-        try:
-            verb = 'SUPER_LIKE' if instance.like_type == 'SUPER' else 'LIKE'
-            title = "Super Like from %s!" if verb == 'SUPER_LIKE' else "New Like from %s!"
-            body = "You've been super liked!" if verb == 'SUPER_LIKE' else "Someone likes you!"
-            print('qwe 11')
-            transaction.on_commit(lambda: create_notification_and_send_push(
-                recipient=instance.liked,
-                actor=instance.liker,
-                verb=verb,
-                target_id=instance.id,
-                title_template=title,
-                body_template=body,
-                push_enabled_field='likes_received_notitication'
-            ))
-            print('qwe 1qw1')
-        except Exception as e:
-            logger.error(f"Like notification failed: {str(e)}")
+    print(f'qwerty mm {instance.liked.id}')
+    send_ws_notification(
+        instance.liked.id, 
+        'notification', 
+        {'type': instance.like_type, 'message': 'body_template'}
+    )
+    # if created:
+    #     try:
+    #         verb = 'SUPER_LIKE' if instance.like_type == 'SUPER' else 'LIKE'
+    #         title = "Super Like from %s!" if verb == 'SUPER_LIKE' else "New Like from %s!"
+    #         body = "You've been super liked!" if verb == 'SUPER_LIKE' else "Someone likes you!"
+    #         print('qwe 11')
+    #         transaction.on_commit(lambda: create_notification_and_send_push(
+    #             recipient=instance.liked,
+    #             actor=instance.liker,
+    #             verb=verb,
+    #             target_id=instance.id,
+    #             title_template=title,
+    #             body_template=body,
+    #             push_enabled_field='likes_received_notitication'
+    #         ))
+    #         print('qwe 1qw1')
+    #     except Exception as e:
+    #         logger.error(f"Like notification failed: {str(e)}")
         
-        try:
-            email_service.send_like_notification(instance)
-        except Exception as e:
-            logger.error(f"Like email notification failed: {str(e)}")
+    #     try:
+    #         email_service.send_like_notification(instance)
+    #     except Exception as e:
+    #         logger.error(f"Like email notification failed: {str(e)}")
 
 @receiver(post_save, sender=Visit)
 def handle_visit_notification(sender, instance, created, **kwargs):
