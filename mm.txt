@@ -11,3 +11,6 @@
 |   Trophy    | Achievement or award              | 1000              |
 |   Rocket    | Energetic and playful             | 2000              |
 |   Car       | Luxury and status                 | 4000              |
+
+
+python manage.py migrate --fake config zero

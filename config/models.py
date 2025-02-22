@@ -1,4 +1,5 @@
 from django.db import models
+from django_jsonform.models.fields import JSONField
 # from django_cryptography.fields import encrypt
 
 class AppConfiguration(models.Model):
@@ -14,7 +15,7 @@ class AppConfiguration(models.Model):
     
     config_type = models.CharField(max_length=20, choices=CONFIG_TYPES, default='other')
     platform = models.CharField(max_length=10, choices=[('all', 'All'), ('android', 'Android'), ('ios', 'iOS')], default='all')
-    data = models.JSONField()
+    data = JSONField(schema={})
     version = models.IntegerField(default=1)
     is_active = models.BooleanField(default=True)
     is_secret = models.BooleanField(default=False)
@@ -28,7 +29,7 @@ class AppConfiguration(models.Model):
 
 class AppMaintenance(models.Model):
     platform = models.CharField(max_length=10, choices=[('all', 'All'), ('android', 'Android'), ('ios', 'iOS')])
-    message = models.TextField()
+    message = models.TextField( default="Our app is currently undergoing maintenance to bring you an even better experience. We apologize for any inconvenience this may cause. Please check back later, and thank you for your patience!",)
     is_active = models.BooleanField(default=False)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()

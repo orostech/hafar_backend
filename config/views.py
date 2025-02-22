@@ -62,7 +62,7 @@ class ConfigurationViewSet(ReadOnlyModelViewSet):
         return configs
 
     def _get_maintenance_info(self):
-        maintenance = AppMaintenance.objects.filter(is_active=True)
+        maintenance = AppMaintenance.objects.filter(is_active=True)[:3]
         return MaintenanceSerializer(maintenance, many=True).data
 
     def _get_subscription_plans(self):
