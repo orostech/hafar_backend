@@ -171,21 +171,21 @@ def handle_message_notification(sender, instance, created, **kwargs):
 
 
 
-    """Handle message notifications and emails"""
-    if created:
-        try:
-            def _create_notification():
-                # Create notification
-                Notification.objects.create(
-                    recipient=instance.recipient,
-                    actor=instance.sender,
-                    verb='MESSAGE',
-                    target_id=instance.id
-                )
-                # Send email notification
-                email_service.send_message_notification(instance)
+    # """Handle message notifications and emails"""
+    # if created:
+    #     try:
+    #         def _create_notification():
+    #             # Create notification
+    #             Notification.objects.create(
+    #                 recipient=instance.recipient,
+    #                 actor=instance.sender,
+    #                 verb='MESSAGE',
+    #                 target_id=instance.id
+    #             )
+    #             # Send email notification
+    #             email_service.send_message_notification(instance)
                 
-            transaction.on_commit(_create_notification)
+    #         transaction.on_commit(_create_notification)
             
-        except Exception as e:
+    #     except Exception as e:
             logger.error(f"Message notification handling failed: {str(e)}", exc_info=True)

@@ -41,6 +41,8 @@ INSTALLED_APPS = [
     'storages',
     'drf_yasg',
     'drf_spectacular',
+    'django_jsonform',
+    'django_cryptography',
     
     # HAFAR APPS
     'chat',

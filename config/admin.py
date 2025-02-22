@@ -1,11 +1,17 @@
-from django.contrib import admin
+# # admin.py
+# from django.contrib import admin
+# from django_jsonform.widgets import JSONFormWidget
+# from .models import AppConfiguration, AppMaintenance
 
-from .models import AppConfiguration
+# @admin.register(AppConfiguration)
+# class AppConfigurationAdmin(admin.ModelAdmin):
+#     list_display = ('config_type', 'platform', 'version', 'is_active')
+#     list_filter = ('config_type', 'platform', 'is_active')
+#     formfield_overrides = {
+#         models.JSONField: {'widget': JSONFormWidget},
+#     }
 
-# Register your models here.
-@admin.register(AppConfiguration)
-class AppConfigurationAdmin(admin.ModelAdmin):
-    list_display = ('key', 'value', 'version', 'created_at', 'is_active')
-    search_fields = ('key',)
-    list_filter = ('is_active',)
-    readonly_fields = ('created_at',)
+# @admin.register(AppMaintenance)
+# class AppMaintenanceAdmin(admin.ModelAdmin):
+#     list_display = ('platform', 'is_active', 'start_time', 'end_time')
+#     list_filter = ('platform', 'is_active')
