@@ -14,6 +14,7 @@
 
 
 python manage.py migrate --fake config zero
+<<<<<<< HEAD
 
 git clone --mirror https://github.com/orostech/hafar_backend.git
 
@@ -22,3 +23,6 @@ java -jar C:\Users\hp\Downloads\bfg-1.15.0.jar --delete-files serviceAccountKey.
 $ java -jar bfg.jar --strip-blobs-bigger-than 100M some-big-repo.git
 
 "C:\Users\hp\Downloads\bfg-1.15.0.jar"
+=======
+m
+>>>>>>> 43f4bc9bc74223cb792192f7eab57c8729c136d2
