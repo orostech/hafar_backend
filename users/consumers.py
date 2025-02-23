@@ -34,16 +34,14 @@ class UserActivityConsumer(AsyncWebsocketConsumer):
         )
     
     async def send_start_infos(self):
-        # cart_count = await database_sync_to_async(self.get_cart_count)()
-        # unread_notification_count = await self.get_unread_notification_count()
-        # unread_messages_count = await database_sync_to_async(self.get_unread_messages_count)()
-
         await self.send(text_data=json.dumps({
             'action': 'initial_data',
             'new_likes': await self.get_new_likes(),
             'active_matches': await self.get_active_matches(),
             'recent_visitors': await self.get_recent_visitors(),
-            'unread_notification_count': await self.get_unread_notification_count()
+            'unread_notification_count': await self.get_unread_notification_count(),
+            'chat_requests': await self.get_chat_requests_count(),
+            'sent_requests': await self.get_sent_requests_count()
         }))
     async def send_activity(self, event):
         """Generic handler for all activity types"""
@@ -74,6 +72,14 @@ class UserActivityConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def get_unread_notification_count(self):
         return self.user.notifications.filter(read=False).count()
+    
+    @database_sync_to_async
+    def get_chat_requests_count(self):
+        return self.user.received_requests.filter(status='PENDING').count()
+    
+    @database_sync_to_async
+    def get_sent_requests_count(self):
+        return self.user.sent_requests.filter(status='PENDING').count()
     
     @database_sync_to_async
     def get_new_likes(self):

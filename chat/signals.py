@@ -4,19 +4,6 @@ from django.dispatch import receiver
 from django.db.models import Count
 from .models import MessageReaction
 
-# @receiver(post_save, sender=MessageReaction)
-# @receiver(post_delete, sender=MessageReaction)
-# def update_message_reactions(sender, instance, **kwargs):
-#     message = instance.message
-#     reactions = reactions = message.message_reactions.all() 
-    
-#     # MessageReaction.objects.filter(message=message) \
-#     #     .values('emoji').annotate(count=Count('id'))
-    
-#     message.reactions = {item['emoji']: item['total'] for item in reactions}
-#     # {r['emoji']: r['count'] for r in reactions}
-#     message.save(update_fields=['reactions'])
-
 @receiver(post_save, sender=MessageReaction)
 @receiver(post_delete, sender=MessageReaction)
 def update_message_reactions(sender, instance, **kwargs):

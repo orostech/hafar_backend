@@ -12,6 +12,8 @@ from django.core.exceptions import ValidationError
 from match.models import Match
 from django.contrib.postgres.search import SearchRank
 from django.db.models import Q
+# from channels.layers import get_channel_layer
+# from asgiref.sync import async_to_sync
 
 
 class ChatViewSet(viewsets.ModelViewSet):
@@ -64,7 +66,7 @@ class MessageViewSet(viewsets.ModelViewSet):
         return context
 
     def get_queryset(self):
-        print('me')
+
         chatId = self.request.query_params.get(
             'chatId', None)
         if not chatId:
@@ -92,7 +94,16 @@ class MessageRequestViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def pending(self, request):
-        queryset = self.get_queryset().filter(status='PENDING')
+        queryset = self.get_queryset().filter(models.Q(status='PENDING'),
+                              models.Q(receiver=self.request.user))
+        page = self.paginate_queryset(queryset)
+        serializer = self.get_serializer(page, many=True)
+        return self.get_paginated_response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def sent(self, request):
+        queryset = self.get_queryset().filter(models.Q(status='PENDING'),
+                              models.Q(sender=self.request.user))
         page = self.paginate_queryset(queryset)
         serializer = self.get_serializer(page, many=True)
         return self.get_paginated_response(serializer.data)
@@ -107,8 +118,13 @@ class MessageRequestViewSet(viewsets.ModelViewSet):
 
         if action == 'accepted':
             chat = message_request.accept()
-            serializer = ChatSerializer(chat, context={'request': request})
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            # serializer = ChatSerializer(chat, context={'request': request})
+           
+            # return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response({
+                        'type': 'CHAT',
+                        'data': ChatSerializer(chat, context={'request': request}).data, }, status=status.HTTP_200_OK)
+        
         elif action == 'rejected':
             message_request.reject()
         else:
@@ -121,30 +137,30 @@ class MessageRequestViewSet(viewsets.ModelViewSet):
         receiver_id = request.query_params.get('receiver_id')
         if not receiver_id:
             return Response({'error': 'receiver_id is required'}, status=status.HTTP_400_BAD_REQUEST)
-        print('oya 0p')
+
         try:
             message_request = MessageRequest.objects.get(
                 (Q(sender=request.user, receiver_id=receiver_id) |
                  Q(sender=receiver_id, receiver_id=request.user))
             )
-            print('pop')
+
             if message_request.status == 'ACCEPTED':
-                print('oya')
+
                 try:
                     chat = Chat.objects.filter(
                         (Q(user1=self.request.user), Q(user2_id=receiver_id)) |
                         (Q(user1_id=receiver_id), Q(user2=self.request.user))
                     ).filter(is_active=True)
                     return Response({
-                        'type': 'chat',
+                        'type': 'CHAT',
                         'data': ChatSerializer(chat, context={'request': request}).data, }, status=status.HTTP_200_OK)
 
                 except:
                     pass
             serializer = self.get_serializer(message_request)
-            print('oya 12')
+
             return Response({
-                'type': 'message_request',
+                'type': 'NEW_REQUEST',
                 'data': serializer.data, }, status=status.HTTP_200_OK)
         except MessageRequest.DoesNotExist:
             try:
@@ -155,12 +171,14 @@ class MessageRequestViewSet(viewsets.ModelViewSet):
 
                 if chat:
                     return Response({
-                        'type': 'chat',
+                        'type': 'CHAT',
                         'data': ChatSerializer(chat, context={'request': request}).data
                     }, status=status.HTTP_200_OK)
             except Chat.DoesNotExist:
                 pass
             return Response({'type': 'no_request'}, status=status.HTTP_200_OK)
+
+
 
 
 class MessageSearchView(views.APIView):
@@ -210,13 +228,11 @@ class SendInitialMessageView(views.APIView):
             )
             # serializer = MiniMessageSerializer(message)
             return Response({
-                'type': 'chat',
+                'type': 'CHAT',
                 'chat': ChatSerializer(chat, context={'request': request}).data,
                 'message': MiniMessageSerializer(message).data
             })
-        # Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
-            # Check for active match
             match_exists = Match.objects.filter(
                 (Q(user1=sender, user2=receiver) |
                  Q(user1=receiver, user2=sender)),
@@ -224,7 +240,6 @@ class SendInitialMessageView(views.APIView):
             ).exists()
 
             if match_exists:
-                # Create chat and send message
                 chat = Chat.objects.create(
                     user1=sender,
                     user2=receiver,
@@ -237,10 +252,8 @@ class SendInitialMessageView(views.APIView):
                     content=content,
                     content_type=content_type
                 )
-                # serializer = MiniMessageSerializer(message, context={'request': request})
-                # return Response(serializer.data, status=status.HTTP_201_CREATED)
                 return Response({
-                    'type': 'chat',
+                    'type': 'CHAT',
                     'chat': ChatSerializer(chat, context={'request': request}).data,
                     'message': MiniMessageSerializer(message).data
                 })
@@ -255,11 +268,17 @@ class SendInitialMessageView(views.APIView):
                     }
                 )
                 if created:
-                    # serializer = MessageRequestSerializer(message_request)
-                    # return Response(serializer.data, status=status.HTTP_201_CREATED)
+                    #    channel_layer = get_channel_layer()
+                    #    async_to_sync(channel_layer.group_send)(
+                    #         f'user_{receiver.id}',
+                    #         {
+                    #             'type': 'send_activity',
+                    #             'action_type': 'message_request',
+                    #             'data':  MessageRequestSerializer(message_request, context={'request': request} ).data
+                    #         })
                     return Response({
-                        'type': 'message_request',
-                        'message_request': MessageRequestSerializer(message_request).data
+                        'type': 'NEW_REQUEST',
+                        'message_request': MessageRequestSerializer(message_request, context={'request': request}).data
                     }, status=status.HTTP_201_CREATED)
                 else:
                     return Response({'error': 'Request already sent'}, status=status.HTTP_400_BAD_REQUEST)

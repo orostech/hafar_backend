@@ -1,11 +1,9 @@
 from datetime import timezone
 from functools import partial
-import json
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.db import transaction
 
-from chat.serializers import ChatSerializer, MessageRequestSerializer, MiniMessageSerializer
 from match.serializers import ProfileMinimalSerializer
 
 from .services import FirebaseNotificationService
@@ -38,7 +36,7 @@ def send_ws_notification(user_id, action_type, data):
 
 def create_notification_and_send_push(recipient, actor, verb, target_id, 
                                      title_template, body_template,
-                                     push_enabled_field, email_enabled=True,data=None):
+                                     push_enabled_field, email_enabled=True):
     # Create in-app notification always
     if verb not in ['MESSAGE','CHAT','REQUEST_ACCEPTED','NEW_REQUEST']:
         Notification.objects.create(
@@ -69,28 +67,11 @@ def create_notification_and_send_push(recipient, actor, verb, target_id,
         except Exception as e:
             logger.error(f"Firebase notification failed: {str(e)}")
 
-     # Prepare WebSocket data
-    ws_data = {
-        'type': verb,
-        'message': body_template,
-        'target_id':target_id
-    }
-
-    if data is not None:
-        ws_data.update(data)
-    else:
-        ws_data['profile'] = profileData
-
     send_ws_notification(
         recipient.id, 
         'notification',
-        ws_data
+        {'type': verb, 'message': body_template, 'profile':profileData}
     )
-    # send_ws_notification(
-    #     recipient.id, 
-    #     'notification',
-    #     {'type': verb, 'message': body_template, 'profile':profileData}
-    # )
 
 
 @receiver(post_save, sender=Like)
@@ -180,8 +161,7 @@ def handle_new_chat_notification(sender, instance, created, **kwargs):
                     title_template="New chat with %s!",
                     body_template="You can now message with %s",
                     push_enabled_field='new_chats_notitication',
-                    email_enabled=True,
-                    data=json.loads(json.dumps(ChatSerializer(instance, context={'user': u}).data, default=str))
+                    email_enabled=True
                 ))
         except Exception as e:
             logger.error(f"Chat notification failed: {str(e)}")
@@ -211,8 +191,7 @@ def handle_message_request(sender, instance, created, **kwargs):
                     title_template="New message request from %s!",
                     body_template="Someone wants to chat with you",
                     push_enabled_field='new_messages_request_notitication',
-                    email_enabled=True,
-                    data=json.loads(json.dumps(MessageRequestSerializer(instance, context={'user': u}).data, default=str))
+                    email_enabled=True
                 ))
         except Exception as e:
             logger.error(f"Message request websocket notification failed: {str(e)}")
@@ -229,8 +208,7 @@ def handle_message_request(sender, instance, created, **kwargs):
                     title_template="Chat accepted with %s!",
                     body_template="Your message request was accepted",
                     push_enabled_field='new_messages_notitication',
-                    email_enabled=True,
-                    data=json.loads(json.dumps(MessageRequestSerializer(instance, context={'user': u}).data, default=str))
+                    email_enabled=True
                 ))
         except Exception as e:
             logger.error(f"Message request notification failed: {str(e)}")
@@ -259,8 +237,7 @@ def handle_message_notification(sender, instance, created, **kwargs):
                 target_id=instance.id,
                 title_template="New message from %s",
                 body_template=instance.content[:30] + "...",
-                push_enabled_field='new_messages_notitication',
-                data=MiniMessageSerializer(instance).data
+                push_enabled_field='new_messages_notitication'
             ))
         except Exception as e:
             logger.error(f"Message notification failed: {str(e)}")

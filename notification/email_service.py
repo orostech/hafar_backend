@@ -63,7 +63,6 @@ class EmailService:
             context
         )
 
-
     def send_match_notification(self, match):
         """Send email when users match"""
         for user in [match.user1, match.user2]:
@@ -172,3 +171,35 @@ class EmailService:
             'password_reset_otp',
             context
         )
+
+    def send_chat_notification(self, user, other_user, chat):
+        """Send email when a new chat is created"""
+        if user.profile.new_chats_notitication:
+            context = {
+                'user': user,
+                'other_user': other_user,
+                'chat_url': f"{settings.FRONTEND_URL}/messages/{chat.id}",
+                'site_name': self.site_name
+            }
+            self._send_email_template(
+                user.email,
+                f"You can now chat with {other_user.profile.display_name}! 💬",
+                'new_chat',
+                context
+            )
+
+    def send_request_accepted_notification(self, user, other_user, request):
+        """Send email when message request is accepted"""
+        if user.profile.new_messages_notitication:
+            context = {
+                'user': user,
+                'other_user': other_user,
+                'chat_url': f"{settings.FRONTEND_URL}/messages/{request.chat.id}",
+                'site_name': self.site_name
+            }
+            self._send_email_template(
+                user.email,
+                f"{other_user.profile.display_name} accepted your request! ✅",
+                'request_accepted',
+                context
+            )

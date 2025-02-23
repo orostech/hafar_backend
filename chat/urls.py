@@ -6,6 +6,9 @@ router = DefaultRouter()
 router.register(r'chats', views.ChatViewSet, basename='chat')
 router.register(r'messages', views.MessageViewSet, basename='message')
 router.register(r'message-requests', views.MessageRequestViewSet, basename='message_request')
+# router.register(r'sent-requests', views.SentMessageRequestViewSet, basename='sent_request')
+
+
 
 urlpatterns = [
     path('', include(router.urls)),
