@@ -14,14 +14,10 @@ class AppConfiguration(models.Model):
 
     config_type = models.CharField(max_length=20, choices=CONFIG_TYPES, default='other')
     platform = models.CharField(max_length=10, choices=[('all', 'All'), ('android', 'Android'), ('ios', 'iOS')], default='all')
-<<<<<<< HEAD
     data = JSONField( blank=True, scheme={
             'type': 'object', 
             'properties': {},
             'additionalProperties': True})
-=======
-    data = JSONField( blank=True)
->>>>>>> 43f4bc9bc74223cb792192f7eab57c8729c136d2
     version = models.IntegerField(default=1)
     is_active = models.BooleanField(default=True)
     is_secret = models.BooleanField(default=False)
