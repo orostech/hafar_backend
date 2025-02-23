@@ -118,9 +118,6 @@ class MessageRequestViewSet(viewsets.ModelViewSet):
 
         if action == 'accepted':
             chat = message_request.accept()
-            # serializer = ChatSerializer(chat, context={'request': request})
-           
-            # return Response(serializer.data, status=status.HTTP_200_OK)
             return Response({
                         'type': 'CHAT',
                         'data': ChatSerializer(chat, context={'request': request}).data, }, status=status.HTTP_200_OK)
