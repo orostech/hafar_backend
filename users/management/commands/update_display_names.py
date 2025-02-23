@@ -16,7 +16,7 @@ class Command(BaseCommand):
         
         updated_count = 0
         for profile in profiles:
-            profile.display_name = profile.user.username
+            profile.display_name = profile.user.username[:20]
             profile.save()
             updated_count += 1
         
