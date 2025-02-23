@@ -7,8 +7,6 @@ from firebase_admin import messaging
 from pathlib import Path
 
 
-# serviceAccountKey = Path(__file__).resolve().parent.parent / "settings" / "serviceAccountKey.json"
-
 
 class FirebaseNotificationService:
     @classmethod
