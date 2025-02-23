@@ -16,11 +16,8 @@ class ConfigurationViewSet(ReadOnlyModelViewSet):
 
     @action(detail=False, methods=['get'])
     def initial_load(self, request):
-        config = self._get_configurations(),
-        print(config)
         response_data = {
-            'app_versions': config[0].get('app_versions', {}),
-            # 'app_config': self._get_configurations(),
+            'app_config': self._get_configurations(),
             'maintenance': self._get_maintenance_info(),
             'subscription_plans': self._get_subscription_plans(),
             'coin_rate': self._get_coin_rate(),
@@ -45,42 +42,27 @@ class ConfigurationViewSet(ReadOnlyModelViewSet):
             'visibility': self._format_choices(VISIBILITY_CHOICES),
             'verification_status': self._format_choices(VERIFICATION_STATUS_CHOICES)
             },
-        
-        # response_data['app_versions'] =
-        
-    
         return Response(response_data)
     
     def _get_configurations(self):
         configs = {}
-        # print(len(self.queryset))
+        print(len(self.queryset))
         for entry in self.queryset:
             platform = entry.platform if entry.platform != 'all' else 'global'
             config_type = entry.config_type
+            
             if config_type not in configs:
                 # print(config_type)
                 configs[config_type] = {}
                 # print(data)
             if entry.is_secret:
-                pass
-                # data = entry.encrypted_data
+                data = entry.encrypted_data
             else:
                 data = entry.data
-                if isinstance(data, dict):
-                    for key, value in data.items():
-                        if isinstance(value, str):
-                            if value.lower() == 'true':
-                                data[key] = True
-                            elif value.lower() == 'false':
-                                data[key] = False
-                            elif value.startswith('[') and value.endswith(']'):
-                                try:
-                                    data[key] = eval(value)
-                                except:
-                                    pass
-                            elif value.isdigit():
-                                data[key] = int(value)
+                # print(data)
+                
             configs[config_type][platform] = data
+            print(configs)
         return configs
 
     def _get_maintenance_info(self):

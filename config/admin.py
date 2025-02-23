@@ -8,10 +8,15 @@ from django.db import models
 @admin.register(AppConfiguration)
 class AppConfigurationAdmin(admin.ModelAdmin):
     list_display = ('config_type', 'platform', 'version', 'is_active')
-    # list_filter = ('config_type', 'platform', 'is_active')
-    # formfield_overrides = {
-    #     models.JSONField: {'widget': JSONFormWidget},
-    # }
+    list_filter = ('config_type', 'platform', 'is_active')
+    formfield_overrides = {
+        models.JSONField: {'widget': JSONFormWidget(schema={
+            'type': 'object', 
+        'properties': {},
+            'additionalProperties': True
+        })},
+    }
+
 
 @admin.register(AppMaintenance)
 class AppMaintenanceAdmin(admin.ModelAdmin):
