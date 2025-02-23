@@ -12,9 +12,11 @@ class AppConfiguration(models.Model):
         ('other', 'Not Assign Yet'),
     ]
 
+    
+
     config_type = models.CharField(max_length=20, choices=CONFIG_TYPES, default='other')
     platform = models.CharField(max_length=10, choices=[('all', 'All'), ('android', 'Android'), ('ios', 'iOS')], default='all')
-    data = JSONField( blank=True, scheme={
+    data = JSONField( blank=True, schema={
             'type': 'object', 
             'properties': {},
             'additionalProperties': True})
