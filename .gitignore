@@ -59,7 +59,7 @@ package-lock.json
 *.egg-info/
 dist/
 build/
-
+notification/serviceAccountKey.json
 
 # Jupyter Notebook files
 .ipynb_checkpoints/
