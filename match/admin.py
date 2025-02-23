@@ -6,6 +6,7 @@ from .models import Like, Dislike, Match, SwipeLimit, UserPreferenceWeight, User
 class LikeAdmin(admin.ModelAdmin):
     list_display = ('liker', 'liked', 'like_type', 'created_at', 'is_active')
     search_fields = ('liker__username', 'liked__username')
+    autocomplete_fields = ['liker', 'liked']
     list_filter = ('like_type', 'is_active')
     readonly_fields = ('created_at',)
 
@@ -13,18 +14,21 @@ class LikeAdmin(admin.ModelAdmin):
 class DislikeAdmin(admin.ModelAdmin):
     list_display = ('disliker', 'disliked', 'created_at')
     search_fields = ('disliker__username', 'disliked__username')
+    autocomplete_fields = ['disliker', 'disliked']
     readonly_fields = ('created_at',)
 
 @admin.register(Visit)
 class VisitAdmin(admin.ModelAdmin):
     list_display = ('visitor', 'visited', 'created_at')
     search_fields = ('visitor__username', 'visited__username')
+    autocomplete_fields = ['visitor', 'visited']
     readonly_fields = ('created_at',)
 
 @admin.register(Match)
 class MatchAdmin(admin.ModelAdmin):
     list_display = ('user1', 'user2', 'created_at', 'is_active', 'last_interaction')
     search_fields = ('user1__username', 'user2__username')
+    autocomplete_fields = ['user1', 'user2']
     list_filter = ('is_active',)
     readonly_fields = ('created_at', 'last_interaction')
 
@@ -32,6 +36,7 @@ class MatchAdmin(admin.ModelAdmin):
 class SwipeLimitAdmin(admin.ModelAdmin):
     list_display = ('user', 'daily_likes_count', 'daily_super_likes_count', 'last_reset')
     search_fields = ('user__username',)
+    autocomplete_fields = ['user']
     readonly_fields = ('last_reset',)
 
 @admin.register(UserPreferenceWeight)
