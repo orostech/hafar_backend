@@ -48,8 +48,12 @@ echo "Restarting Nginx..."
 sudo systemctl restart nginx
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 echo "Deployment complete!"
 
+=======
+echo "Deployment complete!"
+>>>>>>> 43f4bc9bc74223cb792192f7eab57c8729c136d2
 =======
 echo "Deployment complete!"
 >>>>>>> 43f4bc9bc74223cb792192f7eab57c8729c136d2
