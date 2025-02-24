@@ -1,0 +1,15 @@
+<!-- templates/emails/new_message.html -->
+{% extends "emails/base.html" %}
+
+{% block title %}New Message 💌{% endblock %}
+
+{% block content %}
+<h2>Hi {{ user.profile.display_name }}!</h2>
+<p>You have a new message from {{ sender.profile.display_name }}:</p>
+<blockquote>
+    "{{ message_preview }}..."
+</blockquote>
+<center>
+    <a href="{{ chat_url }}" class="button">Reply Now</a>
+</center>
+{% endblock %}

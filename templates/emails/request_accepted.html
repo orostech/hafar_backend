@@ -1,0 +1,13 @@
+<!-- templates/emails/request_accepted.html -->
+{% extends "emails/base.html" %}
+
+{% block title %}Request Accepted! ✅{% endblock %}
+
+{% block content %}
+<h2>Great news {{ user.profile.display_name }}!</h2>
+<p>{{ other_user.profile.display_name }} has accepted your message request.</p>
+<p>You can now continue the conversation in your chat:</p>
+<center>
+    <a href="{{ chat_url }}" class="button">Continue Chatting</a>
+</center>
+{% endblock %}

@@ -1,0 +1,20 @@
+
+
+<!-- templates/emails/new_like.html -->
+{% extends "emails/base.html" %}
+
+{% block title %}Someone Liked Your Profile!{% endblock %}
+
+{% block content %}
+<h2>Hi {{ user.profile.display_name }}!</h2>
+<p>{{ liker.profile.display_name }} liked your profile!</p>
+{% if like_type == 'SUPER' %}
+<p>They really like you - they used a Super Like! ⭐</p>
+{% endif %}
+<p>Check out their profile and see if you're interested too!</p>
+<center>
+    <a href="{{ profile_url }}" class="button">View Profile</a>
+</center>
+{% endblock %}
+
+

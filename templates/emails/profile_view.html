@@ -1,0 +1,18 @@
+<!-- templates/emails/new_match.html -->
+{% extends "emails/base.html" %}
+
+{% block title %}Someone Viewed Your Profile! 👀{% endblock %}
+
+{% block content %}
+<h2>Hello {{ user.profile.display_name }}!</h2>
+<p>We’re excited to let you know that {{ visitor.profile.display_name }} has viewed your profile!</p>
+<p>This could be your chance to connect with them. Don’t miss out!</p>
+<center>
+    <a href="{{ profile_url }}" class="button">View Their Profile</a>
+</center>
+<p>Or, if you're ready to start a conversation:</p>
+<center>
+    <a href="{{ message_url }}" class="button">Send a Message</a>
+</center>
+<p>Stay connected and keep exploring new matches!</p>
+{% endblock %}

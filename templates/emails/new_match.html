@@ -1,0 +1,13 @@
+<!-- templates/emails/new_match.html -->
+{% extends "emails/base.html" %}
+
+{% block title %}New Match! 🎉{% endblock %}
+
+{% block content %}
+<h2>Congratulations {{ user.profile.display_name }}!</h2>
+<p>You've matched with {{ matched_with.profile.display_name }}!</p>
+<p>Don't keep them waiting - start a conversation now!</p>
+<center>
+    <a href="{{ match_url }}" class="button">View Match</a>
+</center>
+{% endblock %}

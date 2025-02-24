@@ -1,0 +1,18 @@
+<!-- templates/emails/login_alert.html -->
+{% extends "emails/base.html" %}
+
+{% block title %}New Login Detected{% endblock %}
+
+{% block content %}
+<h2>Hi {{ user.profile.display_name }}!</h2>
+<p>We noticed a new login to your {{ site_name }} account:</p>
+<ul>
+    <li><strong>Time:</strong> {{ login_time }}</li>
+    <li><strong>Device:</strong> {{ device_info }}</li>
+    <li><strong>Location:</strong> {{ location }}</li>
+</ul>
+<p>If this was you, you can ignore this email. If not, please secure your account.</p>
+{% comment %} <center>
+    <a href="{{ security_url }}" class="button">Review Account Activity</a>
+</center> {% endcomment %}
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "emails/base.html" %}
+
+{% block title %}New Chat Started! 💬{% endblock %}
+
+{% block content %}
+<h2>Hi {{ user.profile.display_name }}!</h2>
+<p>You can now message with {{ other_user.profile.display_name }}!</p>
+<p>Start the conversation and get to know each other better.</p>
+<center>
+    <a href="{{ chat_url }}" class="button">Open Chat</a>
+</center>
+<p style="margin-top: 25px;">
+    <small>This chat was created because you both matched and agreed to connect.</small>
+</p>
+{% endblock %}

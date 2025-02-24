@@ -44,7 +44,11 @@ coverage/**
 *.cover
 *.py,cover
 *.xml
+# Ignore all HTML files
 *.html
+
+# Unignore HTML files in templates/emails/
+!templates/emails/*.html
 *.txt
 
 # Sphinx documentation
