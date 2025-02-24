@@ -66,7 +66,7 @@ MIDDLEWARE = [
     # 'users.middleware.UpdateLastSeenMiddleware',
 ]
 
-
+SERVER_DOMAIN = 'api.joinhafar.com'
 
 # DigitalOcean Spaces Configuration (for both static and media files) 
 AWS_ACCESS_KEY_ID = config('DO_SPACES_KEY')
@@ -74,7 +74,8 @@ AWS_SECRET_ACCESS_KEY = config('DO_SPACES_SECRET')
 AWS_STORAGE_BUCKET_NAME = config('DO_SPACES_BUCKET')
 AWS_S3_ENDPOINT_URL = config('DO_SPACES_ENDPOINT')
 AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400', 'ACL': 'public-read'}
-AWS_S3_CUSTOM_DOMAIN = config('DO_SPACES_CUSTOM_DOMAIN')
+AWS_S3_CUSTOM_DOMAIN = SERVER_DOMAIN
+# config('DO_SPACES_CUSTOM_DOMAIN')
 
 
 
@@ -89,7 +90,7 @@ if not DEBUG:
                 "access_key": AWS_ACCESS_KEY_ID,
                 "secret_key": AWS_SECRET_ACCESS_KEY,
                 "bucket_name": AWS_STORAGE_BUCKET_NAME,
-                "location": "hafar/media",  # Optional: where to store in the bucket
+                "location": "media",  # Optional: where to store in the bucket
             },
     },
     "staticfiles": {
@@ -98,12 +99,16 @@ if not DEBUG:
                 "access_key": AWS_ACCESS_KEY_ID,
                 "secret_key": AWS_SECRET_ACCESS_KEY,
                 "bucket_name": AWS_STORAGE_BUCKET_NAME,
-                "location": "hafar/static", 
+                "location": "static", 
             },
     },
 }
     # STATIC_URL = f'{AWS_S3_CUSTOM_DOMAIN}/hafar/static/'
     # MEDIA_URL = f'{AWS_S3_CUSTOM_DOMAIN}/hafar/media/'
+    # STATIC_URL = f'{AWS_S3_CUSTOM_DOMAIN}/static/'
+    # MEDIA_URL = f'{AWS_S3_CUSTOM_DOMAIN}/media/'
+    STATIC_URL = f'{SERVER_DOMAIN}/static/'
+    MEDIA_URL = f'{SERVER_DOMAIN}/media/'
 else:
     STATIC_URL = '/static/'
     MEDIA_URL = '/media/'
@@ -271,7 +276,7 @@ USE_TZ = True
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-POSTMARK_API_KEY = config('POSTMARK_API_KEY'), 
+POSTMARK_API_KEY = config('POSTMARK_API_KEY')
 DEFAULT_FROM_EMAIL = 'hafar.orostech@joinhafar.com'
 FRONTEND_URL = 'https://joinhafar.com'
 SITE_NAME = "Hafar"

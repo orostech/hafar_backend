@@ -63,6 +63,7 @@ class EmailService:
             context
         )
 
+
     def send_match_notification(self, match):
         """Send email when users match"""
         for user in [match.user1, match.user2]:
@@ -171,6 +172,7 @@ class EmailService:
             'password_reset_otp',
             context
         )
+
 
     def send_chat_notification(self, user, other_user, chat):
         """Send email when a new chat is created"""
