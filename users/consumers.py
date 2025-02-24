@@ -40,8 +40,10 @@ class UserActivityConsumer(AsyncWebsocketConsumer):
             'active_matches': await self.get_active_matches(),
             'recent_visitors': await self.get_recent_visitors(),
             'unread_notification_count': await self.get_unread_notification_count(),
-            'chat_requests': await self.get_chat_requests_count(),
-            'sent_requests': await self.get_sent_requests_count()
+            'chat_requests': 0,
+            # await self.get_chat_requests_count(),
+            'sent_requests': 0
+            # await self.get_sent_requests_count()
         }))
     async def send_activity(self, event):
         """Generic handler for all activity types"""

@@ -31,7 +31,8 @@ def send_ws_notification(user_id, action_type, data):
         {
             'type': 'send_activity',
             'action_type': action_type,
-            'data': data,
+            'data': json.loads(json.dumps(data, default=str)),
+            # data,
         }
     )
 
@@ -51,10 +52,13 @@ def create_notification_and_send_push(recipient, actor, verb, target_id,
     # Check push notification preferences
     profile = recipient.profile
     profileData = ProfileMinimalSerializer(profile).data
+    title = title_template % actor.profile.display_name if "%s" in title_template else title_template
+    body = body_template % actor.profile.display_name if "%s" in body_template else body_template
+           
     if getattr(profile, push_enabled_field, False) and profile.push_notifications:
         try:
-            title = title_template % actor.profile.display_name if "%s" in title_template else title_template
-            body = body_template % actor.profile.display_name if "%s" in body_template else body_template
+            # title = title_template % actor.profile.display_name if "%s" in title_template else title_template
+            # body = body_template % actor.profile.display_name if "%s" in body_template else body_template
             FirebaseNotificationService.send_push_notification(
                 recipient=recipient,
                 title=title,
@@ -72,7 +76,10 @@ def create_notification_and_send_push(recipient, actor, verb, target_id,
      # Prepare WebSocket data
     ws_data = {
         'type': verb,
-        'message': body_template,
+        'message': body,
+        'title':title,
+        # 'display_name': actor.profile.display_name,
+        # 'profile_photo':
         'target_id':target_id
     }
 

@@ -17,6 +17,8 @@ class PinnedMessageInline(admin.StackedInline):
 class ChatAdmin(admin.ModelAdmin):
     list_display = ('id', 'user1', 'user2', 'match', 'created_at', 'last_activity', 'is_active')
     list_filter = ('is_active',)
+    autocomplete_fields = ['user1', 'user2', 'match']
+
     search_fields = ('user1__name', 'user2__name', 'match__id')
     ordering = ['last_activity']
     inlines = [MessageInline, ChatSettingsInline]
@@ -26,14 +28,17 @@ class MessageAdmin(admin.ModelAdmin):
     list_filter = ('content_type',)
     search_fields = ('content',)
     ordering = ['created_at']
+    autocomplete_fields = ['chat', 'sender']
 
 class MessageReactionAdmin(admin.ModelAdmin):
     list_display = ('id', 'message', 'user', 'emoji', 'created_at')
     ordering = ['created_at']
+    autocomplete_fields = ['message', 'user']
 
 class PinnedMessageAdmin(admin.ModelAdmin):
     list_display = ('id', 'message', 'user', 'pinned_at')
     ordering = ['pinned_at']
+    autocomplete_fields = ['message', 'user']
 
 class ChatSettingsAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'chat', 'theme', 'custom_theme', 'notification_enabled')
@@ -43,6 +48,7 @@ class MessageRequestAdmin(admin.ModelAdmin):
     list_display = ('id', 'sender', 'receiver', 'status', 'created_at')
     list_filter = ('status',)
     ordering = ['created_at']
+    autocomplete_fields = ['sender', 'receiver']
 
 admin.site.register(Chat, ChatAdmin)
 admin.site.register(Message, MessageAdmin)
