@@ -7,4 +7,5 @@ class NotificationAdmin(admin.ModelAdmin):
     list_filter = ('verb', 'read', 'created_at')
     search_fields = ('recipient__username', 'actor__username')
     readonly_fields = ('created_at',)
+    autocomplete_fields = ('recipient', 'actor')
     ordering = ('-created_at',)

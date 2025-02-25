@@ -15,8 +15,9 @@ class NotificationViewSet(viewsets.ModelViewSet):
         return self.queryset.filter(recipient=self.request.user).order_by('-created_at')
     
     def list(self, request, *args, **kwargs):
+        data = super().list(request, *args, **kwargs)
         self.get_queryset().update(read=True)
-        return super().list(request, *args, **kwargs)
+        return data
 
     @action(detail=False, methods=['GET'])
     def mark_all_read(self, request):
