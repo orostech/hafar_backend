@@ -14,6 +14,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
         # Only return notifications for the logged-in user
         return self.queryset.filter(recipient=self.request.user).order_by('-created_at')
     
+    
     def list(self, request, *args, **kwargs):
         data = super().list(request, *args, **kwargs)
         self.get_queryset().update(read=True)

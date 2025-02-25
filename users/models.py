@@ -203,7 +203,6 @@ class Profile(models.Model):
     profession = models.CharField(max_length=15, null=True, blank=True)
 
     # Location Fields
-    # location = gis_models.PointField(null=True, blank=True)  # Requires PostGIS
     location = gis_models.PointField(null=True, blank=True, geography=True)
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
@@ -324,9 +323,9 @@ class Profile(models.Model):
     @property
     def online_status(self):
         """ Returns the online status of the user. """
-        if (timezone.now() - self.last_seen) < timedelta(minutes=5):
+        if (timezone.now() - self.last_seen) < timedelta(minutes=30):
             return  'ONLINE'
-        elif (timezone.now() - self.last_seen) < timedelta(minutes=30):
+        elif (timezone.now() - self.last_seen) < timedelta(minutes=60):
             return 'AWAY'
         else:
             return 'OFFLINE'
@@ -380,6 +379,21 @@ class Profile(models.Model):
         else:
             days = diff.days
             return f"Active {days} days ago"
+    
+    def latlng(self):
+        # If the location PointField exists, use it
+        if self.location:
+            return {
+                'latitude': self.location.y,  # y corresponds to latitude
+                'longitude': self.location.x, # x corresponds to longitude
+            }
+        # Optionally, fall back to the separate latitude and longitude fields if available
+        elif self.latitude is not None and self.longitude is not None:
+            return {
+                'latitude': self.latitude,
+                'longitude': self.longitude,
+            }
+        return None
         
     @property
     def completeness_score(self):

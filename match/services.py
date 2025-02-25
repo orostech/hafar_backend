@@ -1,5 +1,5 @@
 # match/services.py
-from django.db.models import Q, F, Count, Avg
+from django.db.models import Q, F, Count, Avg,Case,When,Value,IntegerField
 from django.utils import timezone
 from datetime import date, timedelta
 
@@ -13,18 +13,21 @@ from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.measure import D
 
 
+
 class MatchingService:
-    def __init__(self, user):
+    def __init__(self, user,filter_params=None):
         self.user = user
         self.user_profile = user.profile
         self.preference_weights = UserPreferenceWeight.objects.get_or_create(user=user)[
             0]
         self.ml_service = MLMatchingService(user)
+        self.filter_params = filter_params or {}
 
     def get_potential_matches(self, limit=100):
         """Get potential matches using both traditional and ML approaches"""
         # Get base matches using existing logic
         base_queryset = self._get_base_queryset()
+    
         base_matches = self._score_profiles(base_queryset)
         # print(base_matches)
         # Get more for ML to filter
@@ -34,7 +37,7 @@ class MatchingService:
         enhanced_matches = self.ml_service.enhance_matches(
             base_profiles, limit=limit)
 
-        return enhanced_matches
+        return  enhanced_matches
         # return base_matches
 
     def _get_base_queryset(self):
@@ -48,14 +51,11 @@ class MatchingService:
             disliker=self.user).values_list('disliked', flat=True))
         excluded_users.update(UserBlock.objects.filter(Q(user=self.user) | Q(
             blocked_user=self.user)).values_list('user', 'blocked_user'))
-        print(len(excluded_users))
-
-        # # Exclude blocked users, own profile, and inactive/suspended/banned/deactivated users
+       
+        # Exclude blocked users, own profile, and inactive/suspended/banned/deactivated users
         base_queryset = Profile.objects.exclude(
             Q(user__in=excluded_users) |
             Q(user=self.user) |
-            # TODO comine back for perfection
-            # Exclude inactive, suspended, banned, and deactivated users
             Q(user_status__in=['IA', 'S', 'B', 'D']) |
             Q(profile_visibility='PP')  # Filter by profile visibility
         )
@@ -64,30 +64,57 @@ class MatchingService:
         if self.user_profile.interested_in != 'E':
             base_queryset = base_queryset.filter(
                 gender=self.user_profile.interested_in)
+        print(len(base_queryset))
+       # Age Filtering
+        min_age = self.filter_params.get('min_age', self.user_profile.minimum_age_preference)
+        max_age = self.filter_params.get('max_age', self.user_profile.maximum_age_preference)
 
-        # # Apply age range filtering
         base_queryset = base_queryset.filter(
-            date_of_birth__gte=date.today(
-            ) - relativedelta(years=self.user_profile.maximum_age_preference),
-            date_of_birth__lte=date.today(
-            ) - relativedelta(years=self.user_profile.minimum_age_preference)
+            date_of_birth__gte=date.today() - relativedelta(years=max_age),
+            date_of_birth__lte=date.today() - relativedelta(years=min_age)
         )
-
-        # # # Order by verification status, putting verified users first
-        base_queryset = base_queryset.order_by(
-            F('is_verified').desc(),  # Place verified users first
-            'created_at'  # Secondary ordering can be adjusted as needed
-        )
-
-                # Spatial filtering
+   
+        # Distance filtering
+        max_distance = self.filter_params.get('max_distance', self.user_profile.maximum_distance_preference)
+        print(self.user_profile.location)
         if self.user_profile.location:
             base_queryset = base_queryset.annotate(
                 distance=Distance('location', self.user_profile.location)
             ).filter(
-                distance__lte=D(km=self.user_profile.maximum_distance_preference)
-            ).order_by('distance')
-        print(f'remaining is {len(base_queryset)}')
-        return base_queryset
+                distance__lte=D(km=max_distance)
+            )
+
+            # Ordering logic: Use Case to assign numeric values to `is_verified`
+        base_queryset = base_queryset.annotate(
+            verified_rank=Case(
+                When(is_verified='VERIFIED', then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField(),
+            )
+        )
+
+        # Additional filters
+        filter_conditions = Q()
+
+        if self.filter_params.get('online_status'):  # Online users only
+            filter_conditions &= Q(last_seen__gte=timezone.now() - timedelta(minutes=30))
+
+        if self.filter_params.get('verified_only'):  # Only verified users
+            filter_conditions &= Q(is_verified='VERIFIED')
+
+        if self.filter_params.get('has_stories'):  # Users with stories
+            filter_conditions &= Q(user__videos__video_type='STORY')
+        
+        # Apply combined filters
+        if filter_conditions:
+            base_queryset = base_queryset.filter(filter_conditions)
+        print(len(base_queryset))
+        # Ordering logic
+        if self.user_profile.location:
+            # return base_queryset.order_by('-verified_rank', '-distance')
+            return base_queryset.order_by('-verified_rank', 'distance')
+
+        return base_queryset.order_by('-verified_rank')
      
 
 

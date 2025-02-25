@@ -28,24 +28,6 @@ logger = logging.getLogger(__name__)
 DAILY_LIKE_LIMIT = 30
 DAILY_SUPER_LIKE_LIMIT = 5
 
-def get_potential_matches(self, user, max_distance_km=100):
-    """Get matches using PostGIS spatial queries"""
-    user_profile = user.profile
-    if not user_profile.location:
-        return Profile.objects.none()
-
-    ref_location = user_profile.location
-    return (
-        Profile.objects.exclude(user=user)
-        .annotate(distance=Distance('location', ref_location))
-        .filter(
-            distance__lte=max_distance_km*1000,  # Convert km to meters
-            user__is_active=True,
-            profile_visibility='VE'
-        )
-        .order_by('distance')
-    )
-
 def get_swipe_limits(user):
     cache_key = f'swipe_limits_{user.id}'
     limits = cache.get(cache_key)
@@ -53,10 +35,6 @@ def get_swipe_limits(user):
         limits = SwipeLimit.objects.get_or_create(user=user)[0]
         cache.set(cache_key, limits, timeout=60*5)  # Cache for 5 minutes
     return limits
-
-
-# Add this helper function at the top of views.py
-
 
 def calculate_distance(lat1, lon1, lat2, lon2):
     """Calculate distance between two coordinates in kilometers using Haversine formula."""
@@ -278,32 +256,38 @@ class MatchActionViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['GET'])
     def potential_matches(self, request):
-        """Get potential matches based on preferences and matching algorithm"""
         """Get filtered potential matches"""
-        # Parse filters from query params
+        profile = request.user.profile
         filters = {
-            'gender': request.query_params.get('gender'),
-            'min_age': int(request.query_params.get('min_age', 18)),
-            'max_age': int(request.query_params.get('max_age', 100)),
-            'states': request.query_params.getlist('states'),
-            'max_distance': float(request.query_params.get('max_distance', 100)),
+            'min_age': int(request.query_params.get('min_age', profile.minimum_age_preference)),
+            'max_age': int(request.query_params.get('max_age', profile.maximum_age_preference)),
+            'max_distance': float(request.query_params.get('max_distance', profile.maximum_distance_preference)),
             'relationship_goal': request.query_params.get('relationship_goal'),
-            'interests': request.query_params.getlist('interests'),
-            'show_verified_only': request.query_params.get('show_verified_only', 'false') == 'true',
-            'lifestyle': dict(request.query_params.lists()),
-            'online_status': request.query_params.get('online'),
             'verified_only': request.query_params.get('verified') == 'true',
+            'online_status': request.query_params.get('online') == 'true',
             'has_stories': request.query_params.get('stories') == 'true'
         }
-        matching_service = MatchingService(request.user)
+        # Update user preferences with filters
+        updated = False
+        if filters['min_age'] != profile.minimum_age_preference:
+            profile.minimum_age_preference = filters['min_age']
+            updated = True
+        if filters['max_age'] != profile.maximum_age_preference:
+            profile.maximum_age_preference = filters['max_age']
+            updated = True
+        if filters['max_distance'] != profile.maximum_distance_preference:
+            profile.maximum_distance_preference = filters['max_distance']
+            updated = True
+        if updated:
+            profile.save()
+
+        matching_service = MatchingService(request.user, filter_params=filters)
         potential_matches = matching_service.get_potential_matches(limit=100) 
-        # print(f'see {len(potential_matches)}') 
         paginator = pagination.PageNumberPagination()  
         result_page = paginator.paginate_queryset(potential_matches, request,)
         serializer = ProfileMinimalSerializer(result_page, many=True, 
-                                            #   context={'request': request}
+                                              context={'request': request}
                                               )
-        # return Response(serializer.data)
         return paginator.get_paginated_response(serializer.data)
 
     @action(detail=True, methods=['POST'])

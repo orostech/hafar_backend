@@ -106,6 +106,7 @@ class ProfileSerializer(serializers.ModelSerializer):
     is_premium = serializers.SerializerMethodField()
     is_new_user = serializers.SerializerMethodField()
     online_status= serializers.SerializerMethodField()
+    latlng = serializers.SerializerMethodField()
 
     class Meta:
         model = Profile
@@ -116,12 +117,15 @@ class ProfileSerializer(serializers.ModelSerializer):
                 #  'interests',
                  'profession', 'relationship_goal','relationship_status', 'interested_in',   'body_type',   'complexion', 'do_you_have_kids', 'do_you_have_pets', 'weight', 'height','drinking', 'dietary_preferences', 'smoking',   
                 # Information Level 3
-                'latitude', 'longitude', 'address', 'state', 'country', 'selected_address', 'selected_state', 'selected_country', 'selected_lga','show_online_status', 'show_distance',
+                'latlng', 'address', 'state', 'country', 'selected_address', 'selected_state', 'selected_country', 'selected_lga','show_online_status', 'show_distance',
                 'user_type', 'is_verified',  'user_status', 'minimum_age_preference', 'maximum_age_preference', 'maximum_distance_preference', 'show_last_seen','is_new_user','online_status',)
         
         
         read_only_fields = ('user', 'created_at', 'updated_at', 'last_seen',)
 
+    def get_latlng(self, obj):
+        return obj.latlng()
+    
     def get_is_premium(self, obj):
         return obj.user.active_subscription is not None
     
@@ -148,6 +152,7 @@ class CurrentUserProfileSerializer(serializers.ModelSerializer):
     age = serializers.SerializerMethodField()
     subscription = UserSubscriptionSerializer(source='user.active_subscription', read_only=True)
     is_premium = serializers.SerializerMethodField()
+    latlng = serializers.SerializerMethodField()
 
     class Meta:
         model = Profile
@@ -159,7 +164,7 @@ class CurrentUserProfileSerializer(serializers.ModelSerializer):
             'profession', 'relationship_goal', 'interested_in',   'body_type',   'complexion', 'do_you_have_kids', 'do_you_have_pets', 'weight', 'height', 'dietary_preferences', 'smoking',
             'drinking', 'relationship_status', 'instagram_handle',   'facebook_link',
             # Information Level 3
-            'latitude', 'longitude', 'address', 'state', 'country', 'selected_address', 'selected_state', 'selected_country', 'selected_lga', 'profile_visibility', 'show_online_status', 'show_distance',
+            'latitude', 'longitude','latlng', 'address', 'state', 'country', 'selected_address', 'selected_state', 'selected_country', 'selected_lga', 'profile_visibility', 'show_online_status', 'show_distance',
             'user_type', 'is_verified',  'user_status', 'minimum_age_preference', 'maximum_age_preference', 'maximum_distance_preference', 'show_last_seen',
             # Information Level 4
             'email_notifications', 'push_notifications', 'in_app_notifications' , 'new_matches_notitication','new_messages_notitication', 'app_updates', 'profile_view_notitication',
@@ -178,6 +183,9 @@ class CurrentUserProfileSerializer(serializers.ModelSerializer):
     
     def get_is_premium(self, obj):
         return obj.user.active_subscription is not None
+    
+    def get_latlng(self, obj):
+        return obj.latlng()
 
 
         
