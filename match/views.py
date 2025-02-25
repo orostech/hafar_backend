@@ -4,7 +4,7 @@ from datetime import timedelta
 import logging
 from users.models import Profile
 from django.db import transaction
-from rest_framework import viewsets, status, pagination
+from rest_framework import viewsets, status, pagination,views
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -12,8 +12,9 @@ from django.db.models import Q
 from django.core.cache import cache
 from django.utils import timezone
 from .services import MatchingService
-from django.contrib.gis.db.models.functions import Distance
+# from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.geos import Point
+from django.contrib.gis.measure import Distance
 
 # from users.models import Profile
 from .models import Like, Dislike, Match, SwipeLimit, UserSwipeAction, Visit
@@ -78,7 +79,6 @@ def calculate_distance(lat1, lon1, lat2, lon2):
     # Earth radius in kilometers (approximate)
     radius = 6371.0
     return radius * c
-
 
 class MatchActionViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
@@ -438,3 +438,31 @@ class InteractionsViewSet(viewsets.ModelViewSet):
         page = self.paginate_queryset(queryset)
         serializer = self.get_serializer(page, many=True)
         return self.get_paginated_response(serializer.data)
+    
+
+
+class NearbyUsersView(views.APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        lat = request.query_params.get('lat')
+        lng = request.query_params.get('lng')
+        max_distance = request.query_params.get('distance', 100)  # km
+        
+        if not lat or not lng:
+            return Response({'error': 'Missing coordinates'}, status=400)
+
+        try:
+            user_point = Point(float(lng), float(lat), srid=4326)
+            profiles = Profile.objects.filter(
+                location__distance_lte=(user_point, Distance(km=max_distance)),
+                user__is_active=True,
+                profile_visibility='VE'
+            ).exclude(user=request.user)
+            
+            serializer = ProfileMinimalSerializer(profiles, many=True)
+            return Response(serializer.data)
+        
+        except Exception as e:
+            logger.error(f"Nearby users error: {str(e)}")
+            return Response({'error': 'Failed to fetch nearby users'}, status=500)

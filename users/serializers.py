@@ -146,7 +146,6 @@ class CurrentUserProfileSerializer(serializers.ModelSerializer):
     photos = UserPhotoSerializer(source='user.photos',many=True, read_only=True)
     wallet = WalletSerializer(source='user.wallet', read_only=True)
     age = serializers.SerializerMethodField()
-    # subscription = serializers.SerializerMethodField()
     subscription = UserSubscriptionSerializer(source='user.active_subscription', read_only=True)
     is_premium = serializers.SerializerMethodField()
 
@@ -177,16 +176,6 @@ class CurrentUserProfileSerializer(serializers.ModelSerializer):
     def get_age(self, obj):
         return obj.get_age()
     
-    # def get_subscription(self, obj):
-    #     sub = obj.user.active_subscription
-    #     if sub:
-    #         return {
-    #             'plan': sub.plan.name,
-    #             'end_date': sub.end_date,
-    #             'features': sub.plan.features
-    #         }
-    #     return None
-
     def get_is_premium(self, obj):
         return obj.user.active_subscription is not None
 

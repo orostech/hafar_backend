@@ -292,4 +292,4 @@ def handle_message_notification(sender, instance, created, **kwargs):
     #         transaction.on_commit(_create_notification)
             
     #     except Exception as e:
-            logger.error(f"Message notification handling failed: {str(e)}", exc_info=True)
+            # logger.error(f"Message notification handling failed: {str(e)}", exc_info=True)

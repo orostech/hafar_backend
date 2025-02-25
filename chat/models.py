@@ -68,7 +68,7 @@ class Message(models.Model):
     deleted_for = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name='deleted_messages')
     expires_at = models.DateTimeField(null=True, blank=True)
     is_pinned = models.BooleanField(default=False)
-    reactions = models.JSONField(default=dict)
+    reactions = models.JSONField(default=dict,blank=True)
     # encrypted_content = models.BinaryField()
     # sender_public_key = models.BinaryField()
     # receiver_public_key = models.BinaryField()

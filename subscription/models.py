@@ -10,9 +10,13 @@ class SubscriptionPlan(models.Model):
     ]
     
     name = models.CharField(max_length=20, choices=TIER_CHOICES, unique=True)
+    title = models.CharField(max_length=30, blank=True,)
+
     coin_price = models.PositiveIntegerField()
     duration_days = models.PositiveIntegerField()
     description = models.TextField( null=True, blank=True)
+    iap_apple_id = models.CharField(max_length=100, blank=True, null=True)  # Apple Product ID
+    iap_google_id = models.CharField(max_length=100, blank=True, null=True)  # Google Product ID
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -24,8 +28,15 @@ class SubscriptionPlan(models.Model):
         return f"{self.get_name_display()} Plan - {self.coin_price} coins"
 
 class UserSubscription(models.Model):
+    PURCHASE_METHODS = [
+        ('COINS', 'Coins'),
+        ('PLAY_STORE', 'Play Store'),
+        ('APP_STORE', 'App Store'),
+    ]
+    
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='subscriptions')
     plan = models.ForeignKey(SubscriptionPlan, on_delete=models.CASCADE)
+    purchase_method = models.CharField(max_length=20, choices=PURCHASE_METHODS, default='COINS')
     start_date = models.DateTimeField(auto_now_add=True)
     end_date = models.DateTimeField()
     is_active = models.BooleanField(default=True)

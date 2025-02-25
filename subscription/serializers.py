@@ -12,4 +12,4 @@ class UserSubscriptionSerializer(serializers.ModelSerializer):
 class SubscriptionPlanSerializer(serializers.ModelSerializer):
     class Meta:
         model = SubscriptionPlan
-        fields = ['id', 'name', 'coin_price', 'duration_days']
+        fields = ['id', 'name','title','description','iap_apple_id','iap_google_id', 'coin_price', 'duration_days']

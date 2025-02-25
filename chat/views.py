@@ -73,9 +73,13 @@ class MessageViewSet(viewsets.ModelViewSet):
             raise ValidationError("chatId required")
         return Message.objects.filter(
             chat__id=chatId,
-            # self.kwargs['chat_pk'],
             deleted_for__isnull=True
         ).select_related('sender')
+    
+    def list(self, request, *args, **kwargs):
+        # Mark all messages (except those sent by the current user) as read by setting read_at to now.
+        self.get_queryset().exclude(sender=request.user).filter(read_at__isnull=True).update(read_at=timezone.now())
+        return super().list(request, *args, **kwargs)
 
     def perform_create(self, serializer):
         chat = Chat.objects.get(pk=self.kwargs['chat_pk'])

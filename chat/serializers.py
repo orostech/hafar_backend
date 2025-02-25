@@ -69,7 +69,7 @@ class MiniMessageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Message
-        fields = ['id', 'sender', 'content', 'content_type', 'created_at', 'read_at', 
+        fields = ['chat', 'id', 'sender', 'content', 'content_type', 'created_at', 'read_at', 
                   'reactions','is_pinned', 'pin_count']
    
     def get_reactions(self, obj):

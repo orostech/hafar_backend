@@ -58,10 +58,13 @@ class ProfileMinimalSerializer(serializers.ModelSerializer):
     is_new_user = serializers.SerializerMethodField()
     online_status= serializers.SerializerMethodField()
     is_premium = serializers.SerializerMethodField()
+    latlng = serializers.SerializerMethodField()
+    distance = serializers.FloatField(read_only=True, source='location.km')
 
     class Meta:
         model = Profile
-        fields = ['id','old_id', 'display_name', 'age', 'profile_photo', 'bio','gender','location','is_new_user','online_status','is_premium']
+        fields = ['id','old_id', 'display_name', 'age', 'profile_photo', 'bio','gender','location',
+                  'is_new_user','online_status','is_premium','latlng','distance']
 
     def get_age(self, obj):
         return obj.get_age()
@@ -82,6 +85,25 @@ class ProfileMinimalSerializer(serializers.ModelSerializer):
                 return photo.image_url
             return photo.image.url
         return None
+    
+    def get_latlng(self, obj):
+        """Extract latitude from PointField"""
+        lat = 0
+        lng = 0
+        if obj.location:
+            lat = obj.location.y
+            lng = obj.location.x
+            return lat, lng
+        return None
+        # if obj.location:
+        #     return obj.location.y  # Latitude is Y coordinate
+        # return obj.latitude  # Fallback to stored value
+
+    # def get_lng(self, obj):
+    #     """Extract longitude from PointField"""
+    #     if obj.location:
+    #         return obj.location.x  # Longitude is X coordinate
+    #     return obj.longitude  # Fallback to stored value
 
 class VisitSerializer(serializers.ModelSerializer):
     profile = ProfileMinimalSerializer(source='visitor.profile', read_only=True)
