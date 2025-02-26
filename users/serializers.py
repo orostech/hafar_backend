@@ -6,11 +6,21 @@ from subscription.serializers import UserSubscriptionSerializer
 from users.const import RELATIONSHIP_CHOICES
 from wallet.serializers import WalletSerializer
 from .models import (
-    Profile, UserPhoto, UserVideo, UserBlock,
+    LGA, Profile, State, UserPhoto, UserVideo, UserBlock,
     UserRating, UserAudioRecording, VideoPreference
 )
 
 User = get_user_model()
+
+class StateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = State
+        fields = ["id", "name"]
+
+class LGASerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LGA
+        fields = ["id", "name", "state"]
 
 class PasswordResetRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()

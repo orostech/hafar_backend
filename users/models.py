@@ -54,6 +54,20 @@ def generate_unique_username(email, display_name=''):
     
     return username
 
+class State(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    alias = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.name
+
+class LGA(models.Model):
+    state = models.ForeignKey(State, on_delete=models.CASCADE, related_name="lgas")
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return f"{self.name} ({self.state.name})"
+
 class CustomUserManager(BaseUserManager):
     use_in_migrations = True
     def _create_user(self, email, password=None, **extra_fields):
@@ -211,11 +225,13 @@ class Profile(models.Model):
     country = models.CharField(max_length=100, blank=True)
  
 
-    # Current Location Field
+    # Selected Location Field
+    selected_state = models.ForeignKey(State, on_delete=models.SET_NULL, null=True, blank=True)
+    selected_lga = models.ForeignKey(LGA, on_delete=models.SET_NULL, null=True, blank=True)
     selected_address = models.CharField(max_length=255, blank=True, null=True)
-    selected_state = models.CharField(max_length=100, choices=NIGERIA_STATES, null=True)
+    selected_statee = models.CharField(max_length=100, choices=NIGERIA_STATES, null=True)
     selected_country = models.CharField(max_length=100, blank=True, choices=COUNTRY_CHOICES,  default= 'NG')
-    selected_lga = models.CharField(max_length=100, blank=True,null=True)
+    selected_lgaa = models.CharField(max_length=100, blank=True,null=True)
 
     # Account Details
     user_type = models.CharField(max_length=1, choices=USER_TYPE_CHOICES, default='S')

@@ -4,6 +4,24 @@ from .models import (
     User, Profile, UserPhoto, UserVideo, UserBlock, UserRating, UserAudioRecording, VideoPreference
 )
 
+from django.contrib import admin
+from users.models import State, LGA
+
+class LGAInline(admin.TabularInline):  # Allows editing LGAs within the State admin page
+    model = LGA
+    extra = 1  # Number of empty forms to display
+
+@admin.register(State)
+class StateAdmin(admin.ModelAdmin):
+    list_display = ("name", "alias")  # Display state name and alias in the admin list
+    search_fields = ("name", "alias")  # Enable searching by name or alias
+    inlines = [LGAInline]  # Show LGAs inside the State page
+
+@admin.register(LGA)
+class LGAAdmin(admin.ModelAdmin):
+    list_display = ("name", "state")  # Show LGA name and its state in the list
+    search_fields = ("name",)
+    list_filter = ("state",)  # Add filtering by state in the admin panel
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
     list_display = ('username', 'email', 'first_name', 'last_name', 'is_active')

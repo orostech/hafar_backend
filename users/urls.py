@@ -26,4 +26,6 @@ urlpatterns = [
         path('auth/password-reset/request/', views.PasswordResetRequestView.as_view()),
     path('auth/password-reset/verify/', views.PasswordResetVerifyView.as_view()),
     path('auth/password-reset/confirm/', views.PasswordResetConfirmView.as_view()),
+        path("states/", views.StateListView.as_view(), name="state-list"),
+    path("lgas/", views.LGAListView.as_view(), name="lga-list"),
 ]
