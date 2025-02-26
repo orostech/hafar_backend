@@ -302,6 +302,10 @@ class ProfileViewSet(viewsets.ModelViewSet):
         try:
             # Get the requested profile
             instance = self.get_object()
+
+            if not instance.user:
+                return Response({'error': 'Profile is missing an associated user.'}, status=status.HTTP_400_BAD_REQUEST)
+
             
             # # Only record visits for other users' profiles
             if request.user != instance.user:

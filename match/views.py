@@ -81,7 +81,6 @@ class MatchActionViewSet(viewsets.ModelViewSet):
             liked_user_id = request.data.get('liked')
             like_type = request.data.get('like_type', 'REGULAR').upper()
             user = request.user
-            print('move 1')
             # Input validation
             if not liked_user_id:
                 return Response({'error': 'Liked user ID is required'},
@@ -115,7 +114,7 @@ class MatchActionViewSet(viewsets.ModelViewSet):
                         {'error': 'Daily like limit reached'},
                         status=status.HTTP_429_TOO_MANY_REQUESTS
                     )
-                print('move 2')
+          
                 # Prevent duplicate active likes
                 if Like.objects.filter(
                     liker=user, 
@@ -124,20 +123,20 @@ class MatchActionViewSet(viewsets.ModelViewSet):
                 ).exists():
                     return Response({'error': 'Already liked this user'},
                                   status=status.HTTP_400_BAD_REQUEST)
-                print('move 22')
+           
                 # Remove any existing dislikes
                 Dislike.objects.filter(
                     disliker=user,
                     disliked_id=liked_user_id
                 ).delete()
-                print('move 22')
+     
                 # Create the like
                 like = Like.objects.create(
                     liker=request.user,
                     liked_id=liked_user_id,
                     like_type=like_type
                 )
-                print('move 3')
+   
                  # Check for mutual like
                 mutual_like = Like.objects.filter(
                     liker_id=liked_user_id,
@@ -162,7 +161,7 @@ class MatchActionViewSet(viewsets.ModelViewSet):
                 else:
                     swipe_limit.daily_likes_count += 1
                 swipe_limit.save()
-                print('move 4')
+           
                 return Response({
                 'match_created': mutual_like,
                 'remaining_likes': DAILY_LIKE_LIMIT - swipe_limit.daily_likes_count,

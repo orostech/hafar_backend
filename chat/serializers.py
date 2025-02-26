@@ -22,28 +22,9 @@ class ChatSerializer(serializers.ModelSerializer):
 
         if not user:
            user = obj.user2
-    #         return None
-        # user = self.context['request'].user
         other_user = obj.user2 if user == obj.user1 else obj.user1
         return  ProfileMinimalSerializer(other_user.profile).data
-    #    def get_participant(self, obj):
-    #     # Get user from context, either from request or direct context
-    #     user = None
-    #     request = self.context.get('request')
-    #     if request:
-    #         user = request.user
-    #     else:
-    #         user = self.context.get('user')
-        
-    #     if not user:
-    #         return None
-            
-    #     # Get the other user (receiver or sender)
-    #     other_user = obj.receiver if user == obj.sender else obj.sender
-    #     if not other_user:
-    #         return None
-            
-    #     return ProfileMinimalSerializer(other_user.profile).data
+    
 
     def get_last_message(self, obj):
         last_message = obj.messages.last()
@@ -127,8 +108,6 @@ class MessageRequestSerializer(serializers.ModelSerializer):
         model = MessageRequest
         fields = ['id', 'participant', 'receiver', 'status', 'message', 'created_at']
 
-    # def get_participant(self, obj):
-    #     return  ProfileMinimalSerializer(obj.sender.profile).data
     
     def get_participant(self, obj):
         # Get user from context, either from request or direct context
