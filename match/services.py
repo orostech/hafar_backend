@@ -76,13 +76,22 @@ class MatchingService:
    
         # Distance filtering
         max_distance = self.filter_params.get('max_distance', self.user_profile.maximum_distance_preference)
-        print(self.user_profile.location)
-        if self.user_profile.location:
-            base_queryset = base_queryset.annotate(
-                distance=Distance('location', self.user_profile.location)
-            ).filter(
-                distance__lte=D(km=max_distance)
-            )
+        has_distance_annotation = False
+
+
+            # STATE FILTER (NEW)
+        selected_states = self.filter_params.get('selected_states', [])
+        if selected_states:
+            base_queryset = base_queryset.filter(selected_state_id__in=selected_states)
+        else:
+            # Only apply distance filter if no state filter
+            if self.user_profile.location:
+                base_queryset = base_queryset.annotate(
+                    distance=Distance('location', self.user_profile.location)
+                ).filter(
+                    distance__lte=D(km=max_distance)
+                )
+                has_distance_annotation = True
 
             # Ordering logic: Use Case to assign numeric values to `is_verified`
         base_queryset = base_queryset.annotate(
@@ -110,10 +119,8 @@ class MatchingService:
             base_queryset = base_queryset.filter(filter_conditions)
         print(len(base_queryset))
         # Ordering logic
-        if self.user_profile.location:
-            # return base_queryset.order_by('-verified_rank', '-distance')
+        if has_distance_annotation:
             return base_queryset.order_by('-verified_rank', 'distance')
-
         return base_queryset.order_by('-verified_rank')
      
 

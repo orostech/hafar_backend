@@ -17,7 +17,7 @@ router.register(r'ratings', views.UserRatingViewSet, basename='rating')
 
 urlpatterns = [
      path('', include(router.urls)),
-       path('update-device-token/', views.update_device_token, name='register'),
+       path('update-data/', views.update_user_data, name='register'),
     path('auth/register/', views.RegisterView.as_view(), name='register'),
     path('auth/login/', views.LoginView.as_view(), name='login'),
     path('auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),

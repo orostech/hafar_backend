@@ -117,17 +117,21 @@ class ProfileSerializer(serializers.ModelSerializer):
     is_new_user = serializers.SerializerMethodField()
     online_status= serializers.SerializerMethodField()
     latlng = serializers.SerializerMethodField()
+    selected_state = StateSerializer(read_only=True)
+    selected_lga = LGASerializer(read_only=True)
+    # distance = serializers.SerializerMethodField()
 
     class Meta:
         model = Profile
         fields = (
+            
                 # Information Level 1
                 'id', 'old_id', 'username', 'display_name', 'bio', 'date_of_birth','age', 'gender', 'photos','body_type','last_seen', 'is_premium',
                 # Information Level 2 
                 #  'interests',
                  'profession', 'relationship_goal','relationship_status', 'interested_in',   'body_type',   'complexion', 'do_you_have_kids', 'do_you_have_pets', 'weight', 'height','drinking', 'dietary_preferences', 'smoking',   
                 # Information Level 3
-                'latlng', 'address', 'state', 'country', 'selected_address', 'selected_state', 'selected_country', 'selected_lga','show_online_status', 'show_distance',
+                'latlng', 'address', 'state', 'country', 'selected_address', 'selected_state','selected_lga', 'selected_country', 'selected_lga','show_online_status', 'show_distance',
                 'user_type', 'is_verified',  'user_status', 'minimum_age_preference', 'maximum_age_preference', 'maximum_distance_preference', 'show_last_seen','is_new_user','online_status',)
         
         
@@ -148,7 +152,24 @@ class ProfileSerializer(serializers.ModelSerializer):
     def get_online_status(self,obj):
         return obj.online_status
 
-
+       
+    # def get_distance(self, obj):
+    # # user = None
+    #     request = self.context.get('request')
+    #     print(request)
+    #     print('m e 1mo')
+    #     if request:
+    #         user = request.user
+    #     else:
+    #         user = self.context.get('user')
+    #     if hasattr(user.profile, 'location') and hasattr(obj, 'location') :
+    #         print('m edkc 1')
+    #         if obj.location and user.profile.location:
+    #             print('m kx sde 1')
+    #             m = obj.location.distance(request.user.profile.location) * 100  # km
+    #             print(m)
+    #             return m
+    #     return None
 class CurrentUserProfileSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField(source='user.id')
     username = serializers.CharField(source='user.username', read_only=True)
@@ -163,11 +184,13 @@ class CurrentUserProfileSerializer(serializers.ModelSerializer):
     subscription = UserSubscriptionSerializer(source='user.active_subscription', read_only=True)
     is_premium = serializers.SerializerMethodField()
     latlng = serializers.SerializerMethodField()
-
+    selected_state = StateSerializer(read_only=True)
+    selected_lga = LGASerializer(read_only=True)
     class Meta:
         model = Profile
         fields = (
             # Information Level 1
+          
             'id', 'old_id', 'username', 'display_name', 'bio', 'date_of_birth','age', 'gender','photos','wallet', 'phone', 'email_verified', 'phone_verified', 'device_token', 'created_at', 'updated_at', 'last_seen',
             # Information Level 2
             # 'interests',
@@ -197,6 +220,8 @@ class CurrentUserProfileSerializer(serializers.ModelSerializer):
     def get_latlng(self, obj):
         return obj.latlng()
 
+       
 
-        
 
+
+ 

@@ -257,6 +257,8 @@ class MatchActionViewSet(viewsets.ModelViewSet):
     def potential_matches(self, request):
         """Get filtered potential matches"""
         profile = request.user.profile
+        selected_states = request.query_params.getlist('selected_states', [])
+        selected_states_ids = [int(s) for s in selected_states if s.isdigit()]
         filters = {
             'min_age': int(request.query_params.get('min_age', profile.minimum_age_preference)),
             'max_age': int(request.query_params.get('max_age', profile.maximum_age_preference)),
@@ -264,7 +266,8 @@ class MatchActionViewSet(viewsets.ModelViewSet):
             'relationship_goal': request.query_params.get('relationship_goal'),
             'verified_only': request.query_params.get('verified') == 'true',
             'online_status': request.query_params.get('online') == 'true',
-            'has_stories': request.query_params.get('stories') == 'true'
+            'has_stories': request.query_params.get('stories') == 'true',
+            'selected_states': selected_states_ids,
         }
         # Update user preferences with filters
         updated = False
@@ -423,28 +426,41 @@ class InteractionsViewSet(viewsets.ModelViewSet):
         return self.get_paginated_response(serializer.data)
     
 
+class NearByPagination(pagination.PageNumberPagination):
+    page_size = 50  # Set the number of items per page
+    page_size_query_param = 'page_size'  # Allow client to override, e.g. ?page_size=20
+    max_page_size = 100
 
 class NearbyUsersView(views.APIView):
     permission_classes = [IsAuthenticated]
+    pagination_class = NearByPagination
+    
 
     def get(self, request):
         lat = request.query_params.get('lat')
         lng = request.query_params.get('lng')
-        max_distance = request.query_params.get('distance', 100)  # km
+        max_distance = request.query_params.get('distance', 200)  # km
         
-        if not lat or not lng:
+        if not request.user.profile.location:
             return Response({'error': 'Missing coordinates'}, status=400)
 
         try:
-            user_point = Point(float(lng), float(lat), srid=4326)
+            user_point = request.user.profile.location
+            # Point(float(lng), float(lat), srid=4326)
             profiles = Profile.objects.filter(
                 location__distance_lte=(user_point, Distance(km=max_distance)),
                 user__is_active=True,
                 profile_visibility='VE'
             ).exclude(user=request.user)
             
-            serializer = ProfileMinimalSerializer(profiles, many=True)
-            return Response(serializer.data)
+            # serializer = ProfileMinimalSerializer(profiles, many=True)
+            # return Response(serializer.data)
+            paginator = pagination.PageNumberPagination()
+            result_page = paginator.paginate_queryset(profiles, request,)
+            serializer = ProfileMinimalSerializer(result_page, many=True, 
+                                              context={'request': request}
+                                              )
+            return paginator.get_paginated_response(serializer.data)
         
         except Exception as e:
             logger.error(f"Nearby users error: {str(e)}")

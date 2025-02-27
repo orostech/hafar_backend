@@ -1,6 +1,6 @@
 # views.py
 import requests
-from rest_framework import viewsets, generics, filters, exceptions
+from rest_framework import viewsets, generics, filters, exceptions,pagination
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -28,22 +28,44 @@ from .models import Profile
 from match.models import Visit
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
+from django.contrib.gis.geos import Point
 
+class StatePagination(pagination.PageNumberPagination):
+    page_size = 50  # Set the number of items per page
+    page_size_query_param = 'page_size'  # Allow client to override, e.g. ?page_size=20
+    max_page_size = 100
 
 class StateListView(generics.ListAPIView):
     queryset = State.objects.all()
     serializer_class = StateSerializer
+    pagination_class = StatePagination
+
+
+    # def list(self, request, *args, **kwargs):
+    #     ls =  super().list(request, *args, **kwargs)
+    #     return Response(StateSerializer(ls,many=True ).data,)
+        
+
 
 
 class LGAListView(generics.ListAPIView):
-    def get(self, request, *args, **kwargs):
-        state_id = request.GET.get("state_id")
+        # queryset = State.objects.all()
+    serializer_class = LGASerializer
+    pagination_class = StatePagination
+
+    def get_queryset(self):
+        state_id = self.request.query_params.get(
+            'state_id', None)
+        # state_id = self.request.GET.get("state_id")
+        # print(state_id)
         if state_id:
+            # print(state_id)
             lgas = LGA.objects.filter(state_id=state_id)
         else:
             lgas = LGA.objects.all()
-        serializer = LGASerializer(lgas, many=True)
-        return Response(serializer.data)
+        # serializer = LGASerializer(lgas, many=True)
+        return lgas
+    # Response(serializer.data)
 
 
 class PasswordResetRequestView(views.APIView):
@@ -446,13 +468,51 @@ class UserRatingViewSet(viewsets.ModelViewSet):
         serializer.save(rating_user=self.request.user.profile)
 
 
+# @api_view(['POST'])
+# @permission_classes([IsAuthenticated])
+# def update_device_token(request):
+#     user = request.user
+#     device_token = request.data.get('device_token')
+#     if device_token:
+#         user.device_token = device_token
+#         user.save()
+#         return Response({'status': 'success'})
+#     return Response({'error': 'Invalid token'}, status=400)
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def update_device_token(request):
+def update_user_data(request):
     user = request.user
     device_token = request.data.get('device_token')
+    location = request.data.get('location', {})
+
     if device_token:
         user.device_token = device_token
         user.save()
-        return Response({'status': 'success'})
-    return Response({'error': 'Invalid token'}, status=400)
+
+    # Extract latitude and longitude from the location dictionary
+    latitude = location.get('latitude')
+    longitude = location.get('longitude')
+    
+    if latitude is not None and longitude is not None:
+        profile = user.profile
+        
+        # Convert to float to ensure proper data type
+        lat_float = float(latitude)
+        lng_float = float(longitude)
+        
+        # Update profile coordinates
+        profile.latitude = lat_float
+        profile.longitude = lng_float
+        
+        # Update or create Point object
+        if not profile.location:  # Create Point if not exists
+            profile.location = Point(lng_float, lat_float)
+        else:  # Update existing Point
+            profile.location.x = lng_float  # longitude is x
+            profile.location.y = lat_float  # latitude is y
+            
+        profile.save()
+        
+    return Response({'status': 'success'})

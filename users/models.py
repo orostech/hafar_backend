@@ -229,9 +229,7 @@ class Profile(models.Model):
     selected_state = models.ForeignKey(State, on_delete=models.SET_NULL, null=True, blank=True)
     selected_lga = models.ForeignKey(LGA, on_delete=models.SET_NULL, null=True, blank=True)
     selected_address = models.CharField(max_length=255, blank=True, null=True)
-    selected_statee = models.CharField(max_length=100, choices=NIGERIA_STATES, null=True)
     selected_country = models.CharField(max_length=100, blank=True, choices=COUNTRY_CHOICES,  default= 'NG')
-    selected_lgaa = models.CharField(max_length=100, blank=True,null=True)
 
     # Account Details
     user_type = models.CharField(max_length=1, choices=USER_TYPE_CHOICES, default='S')

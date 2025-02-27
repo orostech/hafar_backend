@@ -41,14 +41,12 @@ class ProfileMinimalSerializer(serializers.ModelSerializer):
     online_status= serializers.SerializerMethodField()
     is_premium = serializers.SerializerMethodField()
     latlng = serializers.SerializerMethodField()
-    # distance = serializers.SerializerMethodField()
 
     class Meta:
         model = Profile
         fields = ['id','old_id', 'display_name', 'age', 'profile_photo', 'bio','gender',
                   'is_new_user','online_status','is_premium'
                   ,'latlng'
-                # ,'distance'
                   ]
 
     def get_age(self, obj):
@@ -70,22 +68,6 @@ class ProfileMinimalSerializer(serializers.ModelSerializer):
                 return photo.image_url
             return photo.image.url
         return None
-    
-    # def get_distance(self, obj):
-    #     # user = None
-    #     # request = self.context.get('request')
-    #     # print(request)
-    #     # print('m e 1mo')
-    #     # if request:
-    #     #     user = request.user
-    #     # else:
-    #     #     user = self.context.get('user')
-    #     # print('m edkc 1')
-    #     # if obj.location and user.profile.location:
-    #     #     print('m kx sde 1')
-    #     #     return obj.location.distance(request.user.profile.location) * 100  # km
-    #     return None
-    
     def get_latlng(self, obj):
         return obj.latlng()
 
