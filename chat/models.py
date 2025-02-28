@@ -4,7 +4,10 @@ from django.conf import settings
 from django.utils import timezone
 # from datetime import timedelta
 from match.models import Match
+from django.db.models import Q
 from django.contrib.postgres.search import SearchVectorField
+
+from users.models import UserRating
 # from cryptography.hazmat.primitives import serialization
 
 class Chat(models.Model):
@@ -31,6 +34,23 @@ class Chat(models.Model):
     def update_last_activity(self):
         self.last_activity = timezone.now()
         self.save(update_fields=['last_activity'])
+    
+    def rate_user(self, user):
+        """
+        Allow rating only if the other user has sent at least 10 messages
+        and a rating doesn’t already exist.
+        """
+        other_user = self.get_other_user(user)
+        message_count = self.messages.filter(sender=other_user).count()
+        if message_count >= 4:
+            # Only allow rating if it has not already been given
+            if not UserRating.objects.filter(rating_user=user, rated_user=other_user).exists():
+                return True
+        return False
+
+        
+    
+
 class MessageManager(models.Manager):
     def create_message(self, sender, chat, content_type, content):
         # Check if chat is active and accepted
@@ -88,6 +108,13 @@ class Message(models.Model):
 
     def is_expired(self):
         return self.expires_at and timezone.now() > self.expires_at
+    
+    # @classmethod
+    # def get_message_count(cls, user1, user2):
+    #     return cls.objects.filter(
+    #         (Q(sender=user1) & Q(receiver=user2)) | 
+    #         (Q(sender=user2) & Q(receiver=user1))
+    #     ).count()
     
     # def update_reactions(self):
     #     self.reactions = defaultdict(int)

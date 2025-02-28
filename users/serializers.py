@@ -119,14 +119,14 @@ class ProfileSerializer(serializers.ModelSerializer):
     latlng = serializers.SerializerMethodField()
     selected_state = StateSerializer(read_only=True)
     selected_lga = LGASerializer(read_only=True)
-    # distance = serializers.SerializerMethodField()
+    average_rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Profile
         fields = (
             
                 # Information Level 1
-                'id', 'old_id', 'username', 'display_name', 'bio', 'date_of_birth','age', 'gender', 'photos','body_type','last_seen', 'is_premium',
+                'id', 'old_id', 'username', 'display_name', 'bio', 'date_of_birth','age', 'gender', 'photos','average_rating','body_type','last_seen', 'is_premium',
                 # Information Level 2 
                 #  'interests',
                  'profession', 'relationship_goal','relationship_status', 'interested_in',   'body_type',   'complexion', 'do_you_have_kids', 'do_you_have_pets', 'weight', 'height','drinking', 'dietary_preferences', 'smoking',   
@@ -139,6 +139,9 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     def get_latlng(self, obj):
         return obj.latlng()
+    
+    def get_average_rating(self, obj):
+        return obj.user.average_rating
     
     def get_is_premium(self, obj):
         return obj.user.active_subscription is not None
@@ -186,6 +189,7 @@ class CurrentUserProfileSerializer(serializers.ModelSerializer):
     latlng = serializers.SerializerMethodField()
     selected_state = StateSerializer(read_only=True)
     selected_lga = LGASerializer(read_only=True)
+    average_rating = serializers.SerializerMethodField()
     class Meta:
         model = Profile
         fields = (
@@ -201,7 +205,7 @@ class CurrentUserProfileSerializer(serializers.ModelSerializer):
             'user_type', 'is_verified',  'user_status', 'minimum_age_preference', 'maximum_age_preference', 'maximum_distance_preference', 'show_last_seen',
             # Information Level 4
             'email_notifications', 'push_notifications', 'in_app_notifications' , 'new_matches_notitication','new_messages_notitication', 'app_updates', 'profile_view_notitication',
-            'likes_received_notitication',
+            'likes_received_notitication','average_rating',
 
             # Infomation Level 7
             'subscription', 'is_premium'
@@ -219,6 +223,9 @@ class CurrentUserProfileSerializer(serializers.ModelSerializer):
     
     def get_latlng(self, obj):
         return obj.latlng()
+
+    def get_average_rating(self, obj):
+        return obj.average_rating
 
        
 

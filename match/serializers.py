@@ -41,16 +41,19 @@ class ProfileMinimalSerializer(serializers.ModelSerializer):
     online_status= serializers.SerializerMethodField()
     is_premium = serializers.SerializerMethodField()
     latlng = serializers.SerializerMethodField()
+    average_rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Profile
         fields = ['id','old_id', 'display_name', 'age', 'profile_photo', 'bio','gender',
-                  'is_new_user','online_status','is_premium'
-                  ,'latlng'
+                  'is_new_user','online_status','is_premium','latlng','average_rating'
                   ]
 
     def get_age(self, obj):
         return obj.get_age()
+    
+    def get_average_rating(self, obj):
+        return obj.user.average_rating
     
     def get_is_new_user(self, obj):
         return obj.is_new_user

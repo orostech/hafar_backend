@@ -2,7 +2,7 @@ from rest_framework import viewsets, permissions, status, views
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.parsers import FileUploadParser
-
+from django.utils import timezone
 from users.models import User
 from .permissions import ChatPermissions
 from .throttling import MessageRateThrottle
@@ -12,8 +12,6 @@ from django.core.exceptions import ValidationError
 from match.models import Match
 from django.contrib.postgres.search import SearchRank
 from django.db.models import Q
-# from channels.layers import get_channel_layer
-# from asgiref.sync import async_to_sync
 
 
 class ChatViewSet(viewsets.ModelViewSet):

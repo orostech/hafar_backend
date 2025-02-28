@@ -3,10 +3,13 @@ import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 # from channels.db import database_sync_to_async
 from django.contrib.auth.models import AnonymousUser
+
+from users.models import UserRating
 from .models import Chat, Message, MessageReaction, PinnedMessage
 from channels.middleware import BaseMiddleware
 from channels.db import database_sync_to_async
 from django.db import models
+from django.db.models import Q, F
 from rest_framework.authtoken.models import Token
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -25,6 +28,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     self.channel_name
                     )
                     await self.accept()
+                    await self.send_start_infos()
                 
 
         except Exception as e:
@@ -38,9 +42,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         )
 
     async def receive(self, text_data):
-        print('here 1')
         data = json.loads(text_data)
-        print(f'here 2 {data}')
         action = data.get('action')
         
         if action == 'message':
@@ -82,6 +84,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                             "chat": await self.chat_to_json(chat,lastmessage)
                         }
                     )
+                
                 # await self.notify_chat_list_update(message.chat)
         except Exception as e:
             await self.send(text_data=json.dumps({
@@ -212,6 +215,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'user_id': event['user_id']
         }))
 
+    async def send_start_infos(self):
+        await self.send(text_data=json.dumps({
+            'action': 'initial_data',
+            'rate_user': await self.rate_user(),
+        }))
         
     @database_sync_to_async
     def is_chat_member(self):
@@ -222,6 +230,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def get_chat(self):
         return Chat.objects.get(id=self.chat_id)
+
+    @database_sync_to_async
+    def rate_user(self):
+        chat = Chat.objects.get(id=self.chat_id)
+        return chat.rate_user(self.user)
+    
 
     @database_sync_to_async
     def create_message(self, content, content_type):

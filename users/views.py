@@ -1,6 +1,6 @@
 # views.py
 import requests
-from rest_framework import viewsets, generics, filters, exceptions,pagination
+from rest_framework import viewsets, generics, filters, exceptions, pagination
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -13,6 +13,7 @@ from .serializers import (
     CurrentUserProfileSerializer, LGASerializer, PasswordResetConfirmSerializer, PasswordResetRequestSerializer, PasswordResetVerifySerializer, ProfileSerializer, StateSerializer, UserPhotoSerializer, RegisterSerializer, UserVideoSerializer,
     UserBlockSerializer, UserRatingSerializer
 )
+from chat.models import Chat, Message
 from django.contrib.auth.hashers import make_password
 from rest_framework import status, views
 from rest_framework.response import Response
@@ -30,26 +31,26 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from django.contrib.gis.geos import Point
 
+
 class StatePagination(pagination.PageNumberPagination):
     page_size = 50  # Set the number of items per page
-    page_size_query_param = 'page_size'  # Allow client to override, e.g. ?page_size=20
+    # Allow client to override, e.g. ?page_size=20
+    page_size_query_param = 'page_size'
     max_page_size = 100
+
 
 class StateListView(generics.ListAPIView):
     queryset = State.objects.all()
     serializer_class = StateSerializer
     pagination_class = StatePagination
 
-
     # def list(self, request, *args, **kwargs):
     #     ls =  super().list(request, *args, **kwargs)
     #     return Response(StateSerializer(ls,many=True ).data,)
-        
-
 
 
 class LGAListView(generics.ListAPIView):
-        # queryset = State.objects.all()
+    # queryset = State.objects.all()
     serializer_class = LGASerializer
     pagination_class = StatePagination
 
@@ -467,19 +468,6 @@ class UserRatingViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(rating_user=self.request.user.profile)
 
-
-# @api_view(['POST'])
-# @permission_classes([IsAuthenticated])
-# def update_device_token(request):
-#     user = request.user
-#     device_token = request.data.get('device_token')
-#     if device_token:
-#         user.device_token = device_token
-#         user.save()
-#         return Response({'status': 'success'})
-#     return Response({'error': 'Invalid token'}, status=400)
-
-
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def update_user_data(request):
@@ -494,25 +482,69 @@ def update_user_data(request):
     # Extract latitude and longitude from the location dictionary
     latitude = location.get('latitude')
     longitude = location.get('longitude')
-    
+
     if latitude is not None and longitude is not None:
         profile = user.profile
-        
+
         # Convert to float to ensure proper data type
         lat_float = float(latitude)
         lng_float = float(longitude)
-        
+
         # Update profile coordinates
         profile.latitude = lat_float
         profile.longitude = lng_float
-        
+
         # Update or create Point object
         if not profile.location:  # Create Point if not exists
             profile.location = Point(lng_float, lat_float)
         else:  # Update existing Point
             profile.location.x = lng_float  # longitude is x
             profile.location.y = lat_float  # latitude is y
-            
+
         profile.save()
-        
+
     return Response({'status': 'success'})
+
+
+class UserRatingViewSet(viewsets.ModelViewSet):
+    serializer_class = UserRatingSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return UserRating.objects.filter(
+            Q(rating_user=self.request.user) |
+            Q(rated_user=self.request.user)
+        )
+
+    def create(self, request, *args, **kwargs):
+        chat_id = self.request.data.get("chat_id")
+        rating = request.data.get('rating')
+        # serializer = self.get_serializer(data=request.data)
+        # serializer.is_valid(raise_exception=True)
+        # chat_id = serializer.validated_data.get('chat_id')
+        if not chat_id:
+            raise exceptions.ValidationError("chat_id is required.")
+        if not rating:
+            raise exceptions.ValidationError("rating is required.")
+
+        try:
+            chat = Chat.objects.get(id=chat_id)
+        except Chat.DoesNotExist:
+            raise exceptions.NotFound("Chat not found.")
+        
+        # Check if the other user has sent at least 10 messages.
+        if not chat.rate_user(request.user):
+            return Response({'error': 'Rating not allowed',}, status=status.HTTP_400_BAD_REQUEST)
+            # raise exceptions.ValidationError(
+            #     "Rating not allowed yet. Ensure that at least 10 messages have been exchanged."
+            # )
+        
+        # Save the rating with the current user as the rating_user.
+        UserRating.objects.create(
+            rating_user=request.user,
+            rated_user=chat.get_other_user(request.user),
+            value=rating
+
+        )
+        # serializer.save(rating_user=request.user)
+        return Response({'status': 'success'}, status=status.HTTP_201_CREATED)

@@ -50,10 +50,10 @@ def create_notification_and_send_push(recipient, actor, verb, target_id,
         )
 
     # Check push notification preferences
-    profile = recipient.profile
+    profile = actor.profile
     profileData = ProfileMinimalSerializer(profile, context={'user': recipient}).data
-    title = title_template % actor.profile.display_name if "%s" in title_template else title_template
-    body = body_template % actor.profile.display_name if "%s" in body_template else body_template
+    title = title_template % profile.display_name if "%s" in title_template else title_template
+    body = body_template % profile.display_name if "%s" in body_template else body_template
            
     if getattr(profile, push_enabled_field, False) and profile.push_notifications:
         try:

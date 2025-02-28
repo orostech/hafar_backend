@@ -81,27 +81,6 @@ class MiniMessageSerializer(serializers.ModelSerializer):
         """Get total number of users who pinned this message"""
         return obj.pinned_messages.count()
 
-
-# class MessageSerializer(serializers.ModelSerializer):
-#     sender = serializers.SerializerMethodField()
-#     reactions = serializers.SerializerMethodField()
-
-#     class Meta:
-#         model = Message
-#         fields = ['id', 'sender', 'content', 'content_type', 'created_at', 'read_at', 'reactions']
-
-#     def get_sender(self, obj):
-#         return {
-#             'id': str(obj.sender.id),
-#             'name': '',
-#             # obj.sender.profile.display_name,
-#             'photo': ''
-#             # obj.sender.profile.photos.first().image_url if obj.sender.profile.photos.exists() else None
-#         }
-
-#     def get_reactions(self, obj):
-#         return {reaction.emoji: reaction.user.count() for reaction in obj.reactions.all()}
-
 class MessageRequestSerializer(serializers.ModelSerializer):
     participant = serializers.SerializerMethodField()
     class Meta:
