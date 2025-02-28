@@ -81,7 +81,7 @@ class VideoPreferenceAdmin(admin.ModelAdmin):
 
 @admin.register(OTP)
 class OTPAdmin(admin.ModelAdmin):
-    list_display = ('user', 'otp', 'created_at')
+    list_display = ('user', 'code', 'created_at')
     list_filter = ('created_at',)
     search_fields = ('user__username',)
     autocomplete_fields = ('user',)
