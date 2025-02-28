@@ -109,12 +109,24 @@ class MatchSerializer(serializers.ModelSerializer):
                   ]
         read_only_fields = ['created_at', 'last_interaction']
 
+    # def get_profile(self, obj):
+    #     if obj.user1 == self.context['request'].user:
+    #         return ProfileMinimalSerializer(obj.user2.profile).data
+    #     else:
+    #         return ProfileMinimalSerializer(obj.user1.profile).data
+
     def get_profile(self, obj):
         if obj.user1 == self.context['request'].user:
-            return ProfileMinimalSerializer(obj.user2.profile).data
+            if obj.user2 and hasattr(obj.user2, 'profile'):
+                return ProfileMinimalSerializer(obj.user2.profile).data
+            else:
+                return None  # or whatever you want to return if the profile does not exist
         else:
-            return ProfileMinimalSerializer(obj.user1.profile).data
-        
+            if obj.user1 and hasattr(obj.user1, 'profile'):
+                return ProfileMinimalSerializer(obj.user1.profile).data
+            else:
+                return None  # or whatever you want to return if the profile does not exist
+            
     def get_last_interaction_at(self, obj):
          return get_at(obj.last_interaction)
 
