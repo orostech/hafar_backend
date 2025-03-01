@@ -7,7 +7,7 @@ from match.models import Match
 from django.db.models import Q
 from django.contrib.postgres.search import SearchVectorField
 
-from users.models import UserRating
+from users.models import Rating
 # from cryptography.hazmat.primitives import serialization
 
 class Chat(models.Model):
@@ -44,7 +44,7 @@ class Chat(models.Model):
         message_count = self.messages.filter(sender=other_user).count()
         if message_count >= 4:
             # Only allow rating if it has not already been given
-            if not UserRating.objects.filter(rating_user=user, rated_user=other_user).exists():
+            if not Rating.objects.filter(rating_user=user, rated_user=other_user).exists():
                 return True
         return False
 

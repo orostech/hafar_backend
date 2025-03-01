@@ -7,7 +7,7 @@ from users.const import RELATIONSHIP_CHOICES
 from wallet.serializers import WalletSerializer
 from .models import (
     LGA, Profile, State, UserPhoto, UserVideo, UserBlock,
-    UserRating, UserAudioRecording, VideoPreference
+    Rating, UserAudioRecording, VideoPreference
 )
 
 User = get_user_model()
@@ -101,9 +101,9 @@ class UserBlockSerializer(serializers.ModelSerializer):
         read_only_fields = ('created_at',)
 
 
-class UserRatingSerializer(serializers.ModelSerializer):
+class RatingSerializer(serializers.ModelSerializer):
     class Meta:
-        model = UserRating
+        model = Rating
         fields = ('id', 'rated_user', 'value', 'created_at')
         read_only_fields = ('created_at',)
 

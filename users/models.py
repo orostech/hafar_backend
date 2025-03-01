@@ -470,7 +470,7 @@ class Profile(models.Model):
     #     return self.interests.filter(id__in=other_user.interests.all())
 
 
-class UserRating(models.Model):
+class Rating(models.Model):
     RATING_CHOICES = [
         (1, '1 Star'),
         (2, '2 Stars'),

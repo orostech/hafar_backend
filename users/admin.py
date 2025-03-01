@@ -1,7 +1,7 @@
 # admin.py
 from django.contrib import admin
 from .models import (
-    OTP, User, Profile, UserPhoto, UserVideo, UserBlock, UserRating, UserAudioRecording, VideoPreference
+    OTP, User, Profile, UserPhoto, UserVideo, UserBlock, Rating, UserAudioRecording, VideoPreference
 )
 
 from django.contrib import admin
@@ -57,8 +57,8 @@ class UserBlockAdmin(admin.ModelAdmin):
     search_fields = ('user__username', 'blocked_user__username')
     autocomplete_fields = ('user', 'blocked_user')
 
-@admin.register(UserRating)
-class UserRatingAdmin(admin.ModelAdmin):
+@admin.register(Rating)
+class RatingAdmin(admin.ModelAdmin):
     list_display = ('rating_user', 'rated_user', 'value', 'created_at')
     list_filter = ('value', 'created_at')
     search_fields = ('rating_user__user__username', 'rated_user__user__username')

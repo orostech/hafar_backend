@@ -8,10 +8,10 @@ from django.db.models import Q, F
 from django.utils import timezone
 from match.serializers import ProfileMinimalSerializer
 from notification.email_service import EmailService
-from .models import LGA, OTP, Profile, State, User, UserPhoto, UserVideo, UserBlock, UserRating, generate_unique_username
+from .models import LGA, OTP, Profile, State, User, UserPhoto, UserVideo, UserBlock, Rating, generate_unique_username
 from .serializers import (
     CurrentUserProfileSerializer, LGASerializer, PasswordResetConfirmSerializer, PasswordResetRequestSerializer, PasswordResetVerifySerializer, ProfileSerializer, StateSerializer, UserPhotoSerializer, RegisterSerializer, UserVideoSerializer,
-    UserBlockSerializer, UserRatingSerializer
+    UserBlockSerializer, RatingSerializer
 )
 from chat.models import Chat, Message
 from django.contrib.auth.hashers import make_password
@@ -455,12 +455,12 @@ class UserBlockViewSet(viewsets.ModelViewSet):
         serializer.save(user=self.request.user)
 
 
-class UserRatingViewSet(viewsets.ModelViewSet):
-    serializer_class = UserRatingSerializer
+class RatingViewSet(viewsets.ModelViewSet):
+    serializer_class = RatingSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return UserRating.objects.filter(
+        return Rating.objects.filter(
             Q(rating_user__user=self.request.user) |
             Q(rated_user__user=self.request.user)
         )
@@ -506,12 +506,12 @@ def update_user_data(request):
     return Response({'status': 'success'})
 
 
-class UserRatingViewSet(viewsets.ModelViewSet):
-    serializer_class = UserRatingSerializer
+class RatingViewSet(viewsets.ModelViewSet):
+    serializer_class = RatingSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return UserRating.objects.filter(
+        return Rating.objects.filter(
             Q(rating_user=self.request.user) |
             Q(rated_user=self.request.user)
         )
@@ -540,7 +540,7 @@ class UserRatingViewSet(viewsets.ModelViewSet):
             # )
         
         # Save the rating with the current user as the rating_user.
-        UserRating.objects.create(
+        Rating.objects.create(
             rating_user=request.user,
             rated_user=chat.get_other_user(request.user),
             value=rating

@@ -10,7 +10,7 @@ router.register(r'profiles', views.ProfileViewSet, basename='profile')
 router.register(r'photos', views.UserPhotoViewSet, basename='photo')
 router.register(r'videos', views.UserVideoViewSet, basename='video')
 router.register(r'blocks', views.UserBlockViewSet, basename='block')
-router.register(r'ratings', views.UserRatingViewSet, basename='rating')
+router.register(r'ratings', views.RatingViewSet, basename='rating')
 
 
 
