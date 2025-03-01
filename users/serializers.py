@@ -225,7 +225,7 @@ class CurrentUserProfileSerializer(serializers.ModelSerializer):
         return obj.latlng()
 
     def get_average_rating(self, obj):
-        return obj.average_rating
+        return obj.user.average_rating
 
        
 
