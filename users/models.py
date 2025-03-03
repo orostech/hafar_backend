@@ -232,7 +232,7 @@ class Profile(models.Model):
                               help_text="What gender do you want to match with?")
 
     # Profession
-    profession = models.CharField(max_length=15, null=True, blank=True)
+    profession = models.CharField(max_length=25, null=True, blank=True)
 
     # Location Fields
     location = gis_models.PointField(null=True, blank=True, geography=True)

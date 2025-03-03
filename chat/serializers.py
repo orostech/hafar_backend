@@ -88,24 +88,40 @@ class MessageRequestSerializer(serializers.ModelSerializer):
         fields = ['id', 'participant', 'receiver', 'status', 'message', 'created_at']
 
     
+    # def get_participant(self, obj):
+    #     # Get user from context, either from request or direct context
+    #     user = None
+    #     request = self.context.get('request')
+    #     if request:
+    #         user = request.user
+    #     else:
+    #         user = self.context.get('user')
+        
+    #     if not user:
+    #         return None
+            
+    #     # Get the other user (receiver or sender)
+    #     other_user = obj.receiver if user == obj.sender else obj.sender
+    #     if not other_user:
+    #         return None
+            
+    #     return ProfileMinimalSerializer(other_user.profile).data
     def get_participant(self, obj):
-        # Get user from context, either from request or direct context
-        user = None
-        request = self.context.get('request')
-        if request:
-            user = request.user
-        else:
-            user = self.context.get('user')
+        user = self.context.get('request').user if 'request' in self.context else self.context.get('user')
         
         if not user:
             return None
-            
-        # Get the other user (receiver or sender)
+
+        # Determine the other user (receiver or sender)
         other_user = obj.receiver if user == obj.sender else obj.sender
         if not other_user:
             return None
-            
-        return ProfileMinimalSerializer(other_user.profile).data
-    
+
+        # Check if the other user has a profile
+        if hasattr(other_user, 'profile'):
+            return ProfileMinimalSerializer(other_user.profile).data
+        else:
+            return None
+        
 
     

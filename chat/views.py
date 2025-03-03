@@ -72,7 +72,7 @@ class MessageViewSet(viewsets.ModelViewSet):
         return Message.objects.filter(
             chat__id=chatId,
             deleted_for__isnull=True
-        ).select_related('sender')
+        ).select_related('sender').order_by('-created_at')
     
     def list(self, request, *args, **kwargs):
         # Mark all messages (except those sent by the current user) as read by setting read_at to now.

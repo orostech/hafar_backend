@@ -8,6 +8,7 @@ from django.db.models import Q, F
 from django.utils import timezone
 from match.serializers import ProfileMinimalSerializer
 from notification.email_service import EmailService
+from users.permissions import IsOwner
 from .models import LGA, OTP, Profile, State, User, UserPhoto, UserVideo, UserBlock, Rating, generate_unique_username
 from .serializers import (
     CurrentUserProfileSerializer, LGASerializer, PasswordResetConfirmSerializer, PasswordResetRequestSerializer, PasswordResetVerifySerializer, ProfileSerializer, StateSerializer, UserPhotoSerializer, RegisterSerializer, UserVideoSerializer,
@@ -330,6 +331,11 @@ class ProfileViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter]
     search_fields = ['display_name', 'bio']
 
+    def get_permissions(self):
+        if self.action in ['update', 'partial_update', 'destroy']:
+            return [IsAuthenticated(), IsOwner()]
+        return [IsAuthenticated()]
+
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context['request'] = self.request
@@ -387,17 +393,16 @@ class ProfileViewSet(viewsets.ModelViewSet):
         Handle the update for the user's own profile.
         """
         profile = self.request.user.profile
-        print(request.FILES.getlist('images'))
         serializer = CurrentUserProfileSerializer(
             profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        # Handle image uploads
+     
         if 'images' in request.FILES:
             for image in request.FILES.getlist('images'):
                 UserPhoto.objects.create(user=request.user, image=image)
 
         self.perform_update(serializer)
-        # Send WebSocket update
+
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
             f'user_{request.user.id}',
@@ -412,14 +417,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
         )
         return Response(serializer.data)
 
-    @action(detail=False, methods=['GET'])
-    def recommended_matches(self, request):
-        """
-        Returns recommended matches based on interests and preferences similarity
-        """
-        base_queryset = self.get_queryset()
-        serializer = self.get_serializer(base_queryset, many=True)
-        return Response(serializer.data)
+
 
 
 class UserPhotoViewSet(viewsets.ModelViewSet):
@@ -485,19 +483,13 @@ def update_user_data(request):
 
     if latitude is not None and longitude is not None:
         profile = user.profile
-
-        # Convert to float to ensure proper data type
         lat_float = float(latitude)
         lng_float = float(longitude)
-
-        # Update profile coordinates
         profile.latitude = lat_float
         profile.longitude = lng_float
-
-        # Update or create Point object
-        if not profile.location:  # Create Point if not exists
+        if not profile.location: 
             profile.location = Point(lng_float, lat_float)
-        else:  # Update existing Point
+        else: 
             profile.location.x = lng_float  # longitude is x
             profile.location.y = lat_float  # latitude is y
 

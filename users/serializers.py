@@ -2,6 +2,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 
+from match.models import Dislike, Like
 from subscription.serializers import UserSubscriptionSerializer
 from users.const import RELATIONSHIP_CHOICES
 from wallet.serializers import WalletSerializer
@@ -120,6 +121,9 @@ class ProfileSerializer(serializers.ModelSerializer):
     selected_state = StateSerializer(read_only=True)
     selected_lga = LGASerializer(read_only=True)
     average_rating = serializers.SerializerMethodField()
+    has_liked = serializers.SerializerMethodField()
+    has_disliked = serializers.SerializerMethodField()
+    has_super_liked = serializers.SerializerMethodField()
 
     class Meta:
         model = Profile
@@ -132,7 +136,8 @@ class ProfileSerializer(serializers.ModelSerializer):
                  'profession', 'relationship_goal','relationship_status', 'interested_in',   'body_type',   'complexion', 'do_you_have_kids', 'do_you_have_pets', 'weight', 'height','drinking', 'dietary_preferences', 'smoking',   
                 # Information Level 3
                 'latlng', 'address', 'state', 'country', 'selected_address', 'selected_state','selected_lga', 'selected_country', 'selected_lga','show_online_status', 'show_distance',
-                'user_type', 'is_verified',  'user_status', 'minimum_age_preference', 'maximum_age_preference', 'maximum_distance_preference', 'show_last_seen','is_new_user','online_status',)
+                'user_type', 'is_verified',  'user_status', 'minimum_age_preference', 'maximum_age_preference', 'maximum_distance_preference', 'show_last_seen','is_new_user','online_status',
+                 'has_liked', 'has_disliked', 'has_super_liked')
         
         
         read_only_fields = ('user', 'created_at', 'updated_at', 'last_seen',)
@@ -154,6 +159,24 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     def get_online_status(self,obj):
         return obj.online_status
+    
+    def get_has_liked(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return Like.objects.filter(liker=request.user, liked=obj.user, is_active=True).exists()
+        return False
+
+    def get_has_disliked(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return Dislike.objects.filter(disliker=request.user, disliked=obj.user).exists()
+        return False
+
+    def get_has_super_liked(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return Like.objects.filter(liker=request.user, liked=obj.user, like_type='SUPER', is_active=True).exists()
+        return False
 
        
     # def get_distance(self, obj):
@@ -180,7 +203,8 @@ class CurrentUserProfileSerializer(serializers.ModelSerializer):
     phone = serializers.ReadOnlyField(source='user.phone')
     email_verified = serializers.ReadOnlyField(source='user.email_verified')
     phone_verified  = serializers.ReadOnlyField(source='user.phone_verified')
-    device_token  = serializers.ReadOnlyField(source='user.device_token')
+    # device_token  = serializers.ReadOnlyField(source='user.device_token')
+    device_token = serializers.CharField(source='user.device_token', required=False, allow_blank=True)
     photos = UserPhotoSerializer(source='user.photos',many=True, read_only=True)
     wallet = WalletSerializer(source='user.wallet', read_only=True)
     age = serializers.SerializerMethodField()
@@ -226,7 +250,34 @@ class CurrentUserProfileSerializer(serializers.ModelSerializer):
 
     def get_average_rating(self, obj):
         return obj.user.average_rating
+    
+    def update(self, instance, validated_data):
+        # user_data = {}
+        # for key, value in validated_data.items():
+        #     if key in ['username', 'first_name','last_name','phone','device_token']:
+        #         user_data[key] = value
+        #         print(user_data)
+        #     else:
+        #         setattr(instance, key, value)
+        # for attr, value in user_data.items():
+        #     setattr(instance.user, attr, value)
 
+         # Extract nested user data, defaulting to an empty dict if not present
+        # user_data = validated_data.pop('user', {})
+        print(validated_data)
+
+        # Update the Profile fields (non-user fields)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        
+        # # Update the related User instance fields
+        # for attr, value in user_data.items():
+        #     setattr(instance.user, attr, value)
+
+        # instance.user.save(**user_data)
+        instance.save()
+        return  instance
+    # super().update(instance, validated_data)
        
 
 
