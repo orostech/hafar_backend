@@ -80,14 +80,20 @@ class SwipeLimit(models.Model):
     daily_likes_count = models.PositiveIntegerField(default=0)
     daily_super_likes_count = models.PositiveIntegerField(default=0)
     daily_free_super_likes = models.PositiveIntegerField(default=1)
+    ad_boost_remaining = models.PositiveIntegerField(default=0)
     last_reset = models.DateTimeField(default=timezone.now)
     
     def reset_if_needed(self):
         if timezone.now() - self.last_reset > timedelta(days=1):
             self.daily_likes_count = 0
             self.daily_super_likes_count = 0
+            self.ad_boost_remaining = 0
             self.last_reset = timezone.now()
             self.save()
+    
+    def add_ad_boost(self, amount=5):
+        self.ad_boost_remaining += amount
+        self.save()
 
 class UserPreferenceWeight(models.Model):
     """Stores weights for different matching criteria per user"""

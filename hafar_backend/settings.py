@@ -19,6 +19,8 @@ SECRET_KEY = config('SECRET_KEY')
 ALLOWED_HOSTS = config('ALLOWED_HOSTS',cast=Csv())
 FLUTTERWAVE_SECRET_KEY = config('FLUTTERWAVE_SECRET_KEY')
 
+APP_PACKAGE_NAME= 'com.orostech.hafar'
+
 # Application definition
 
 INSTALLED_APPS = [

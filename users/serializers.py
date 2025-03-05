@@ -1,8 +1,8 @@
 # serializers.py
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-
-from match.models import Dislike, Like
+from django.db.models import Q
+from match.models import Dislike, Like, Match, Visit
 from subscription.serializers import UserSubscriptionSerializer
 from users.const import RELATIONSHIP_CHOICES
 from wallet.serializers import WalletSerializer
@@ -214,6 +214,14 @@ class CurrentUserProfileSerializer(serializers.ModelSerializer):
     selected_state = StateSerializer(read_only=True)
     selected_lga = LGASerializer(read_only=True)
     average_rating = serializers.SerializerMethodField()
+
+     
+    # New count fields
+    total_matches = serializers.SerializerMethodField()
+    total_likes_given = serializers.SerializerMethodField()
+    total_visits = serializers.SerializerMethodField()
+    total_dislikes_given = serializers.SerializerMethodField()
+
     class Meta:
         model = Profile
         fields = (
@@ -232,7 +240,10 @@ class CurrentUserProfileSerializer(serializers.ModelSerializer):
             'likes_received_notitication','average_rating',
 
             # Infomation Level 7
-            'subscription', 'is_premium'
+            'subscription', 'is_premium',
+
+            # New count fields
+            'total_matches', 'total_likes_given', 'total_visits', 'total_dislikes_given'
 
         )
         read_only_fields = (
@@ -277,7 +288,24 @@ class CurrentUserProfileSerializer(serializers.ModelSerializer):
         # instance.user.save(**user_data)
         instance.save()
         return  instance
-    # super().update(instance, validated_data)
+    
+    def get_total_matches(self, obj):
+        return Match.objects.filter(
+            Q(user1=obj.user) | Q(user2=obj.user)
+        ).count()
+
+    def get_total_likes_given(self, obj):
+        return Like.objects.filter(liker=obj.user).count()
+
+    def get_total_visits(self, obj):
+        return Visit.objects.filter(visitor=obj.user).count()
+
+    def get_total_dislikes_given(self, obj):
+        return Dislike.objects.filter(disliker=obj.user).count()
+
+
+
+
        
 
 

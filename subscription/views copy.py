@@ -7,9 +7,7 @@ from .serializers import SubscriptionPlanSerializer, UserSubscriptionSerializer
 from wallet.models import Transaction
 from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiExample
 from google.oauth2 import service_account
-from django.conf import settings
 from googleapiclient.discovery import build
-import time
 
 def validate_platform_purchase(receipt_data, platform):
     """
@@ -17,37 +15,25 @@ def validate_platform_purchase(receipt_data, platform):
     Returns (is_valid, error_message)
     """
     try:
-        print('go 1')
         if platform == 'ANDROID':
-            print('go 2')
-            credentials = service_account.Credentials.from_service_account_info(
-                # json.loads(settings.GOOGLE_SERVICE_ACCOUNT_JSON),
-                 settings.FIREBASE_CONFIG,
-                scopes=['https://www.googleapis.com/auth/androidpublisher']
-            )
-            print('go 3')
-            android_publisher = build('androidpublisher', 'v3', credentials=credentials)
-            # Verify subscription
-            print('go 4')
-            # print(receipt_data)
-            result = android_publisher.purchases().subscriptionsv2().get(
-                packageName= settings.APP_PACKAGE_NAME,
+            # Google Play validation
+            validation_url = 'https://www.googleapis.com/androidpublisher/v3/applications/{packageName}/purchases/subscriptions/{subscriptionId}/tokens/{token}'.format(
+                packageName=settings.APP_PACKAGE_NAME,
+                subscriptionId=receipt_data['subscriptionId'],
                 token=receipt_data['purchaseToken']
-            ).execute()
-            print(result)
+            )
 
-            print('go 5')
-            # Check subscription status
-            if result.get('subscriptionState') != 'SUBSCRIPTION_STATE_ACTIVE':
-                return False, 'Subscription not active'
+            headers = {
+                'Authorization': f'Bearer {get_google_auth_token()}'
+            }
 
-            print('go 6')
-            # Check expiration
-            expiry_time = int(result['lineItems'][0]['expiryTime'])
-            if expiry_time < int(time.time() * 1000):
+            response = requests.get(validation_url, headers=headers)
+            if response.status_code != 200:
+                return False, 'Invalid Google Play receipt'
+
+            result = response.json()
+            if result['expiryTimeMillis'] < int(time.time() * 1000):
                 return False, 'Subscription expired'
-
-            return True, None
 
         elif platform == 'IOS':
             # Apple App Store validation
@@ -75,7 +61,7 @@ def validate_platform_purchase(receipt_data, platform):
         return True, None
 
     except Exception as e:
-        print(f"Purchase validation failed: {str(e)}")
+        logger.error(f"Purchase validation failed: {str(e)}")
         return False, 'Validation error'
 
 def get_google_auth_token():
@@ -246,29 +232,6 @@ class UserSubscriptionViewSet(viewsets.ModelViewSet):
                 
             return Response({'error': error_msg}, status=400)
         
-        except SubscriptionPlan.DoesNotExist:
-            return Response({'error': 'Invalid plan'}, status=404)
-        except KeyError as e:
-            return Response({'error': f'Missing field: {str(e)}'}, status=400)
-        
-    @action(detail=False, methods=['post'])
-    def create_subscription(self, request):
-        try:
-            plan = SubscriptionPlan.objects.get(id=request.data['plan_id'], is_active=True)
-            platform = request.data.get('platform', 'ANDROID')
-            purchase_method = request.data.get('purchase_method', 'COINS')
-            
-            subscription = UserSubscription.objects.create(
-                user=request.user,
-                plan=plan,
-                purchase_method=purchase_method,
-                is_active=True
-            )
-            
-            return Response(
-                UserSubscriptionSerializer(subscription).data,
-                status=status.HTTP_201_CREATED
-            )
         except SubscriptionPlan.DoesNotExist:
             return Response({'error': 'Invalid plan'}, status=404)
         except KeyError as e:

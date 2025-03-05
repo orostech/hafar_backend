@@ -25,8 +25,8 @@ from .serializers import (
 
 logger = logging.getLogger(__name__)
 
-DAILY_LIKE_LIMIT = 30
-DAILY_SUPER_LIKE_LIMIT = 5
+DAILY_LIKE_LIMIT = 10
+DAILY_SUPER_LIKE_LIMIT = 3
 
 def get_swipe_limits(user):
     cache_key = f'swipe_limits_{user.id}'
@@ -94,12 +94,7 @@ class MatchActionViewSet(viewsets.ModelViewSet):
                               status=status.HTTP_400_BAD_REQUEST)
 
             with transaction.atomic():
-                # # Lock swipe limit for atomic update
-                # swipe_limit =  SwipeLimit.objects.select_for_update().get_or_create(
-                #     user=user
-                # )[0]
-                # swipe_limit.reset_if_needed()
-                  # Ensure swipe limit exists and reset if needed
+             
                 swipe_limit, created = SwipeLimit.objects.select_for_update().get_or_create(user=user)
                 swipe_limit.reset_if_needed()
 
@@ -110,10 +105,14 @@ class MatchActionViewSet(viewsets.ModelViewSet):
                         status=status.HTTP_429_TOO_MANY_REQUESTS
                     )
                 elif swipe_limit.daily_likes_count >= DAILY_LIKE_LIMIT:
-                    return Response(
-                        {'error': 'Daily like limit reached'},
-                        status=status.HTTP_429_TOO_MANY_REQUESTS
-                    )
+                    if swipe_limit.add_ad_boost > 0:
+                        swipe_limit.add_ad_boost -= 1
+                        swipe_limit.save()
+                    else:
+                        return Response(
+                            {'error': 'Daily like limit reached'},
+                            status=status.HTTP_429_TOO_MANY_REQUESTS
+                        )
           
                 # Prevent duplicate active likes
                 if Like.objects.filter(
@@ -164,7 +163,7 @@ class MatchActionViewSet(viewsets.ModelViewSet):
            
                 return Response({
                 'match_created': mutual_like,
-                'remaining_likes': DAILY_LIKE_LIMIT - swipe_limit.daily_likes_count,
+                'remaining_likes': (DAILY_LIKE_LIMIT - swipe_limit.daily_likes_count) + swipe_limit.ad_boost_remaining,
                 'remaining_super_likes': DAILY_SUPER_LIKE_LIMIT - swipe_limit.daily_super_likes_count
             }, status=status.HTTP_200_OK)
         
@@ -234,7 +233,7 @@ class MatchActionViewSet(viewsets.ModelViewSet):
        
            return Response({
                 'status': 'success',
-                'remaining_likes': DAILY_LIKE_LIMIT - swipe_limit.daily_likes_count,
+                'remaining_likes': (DAILY_LIKE_LIMIT - swipe_limit.daily_likes_count) + swipe_limit.ad_boost_remaining,
                 'remaining_super_likes': DAILY_SUPER_LIKE_LIMIT - swipe_limit.daily_super_likes_count
             }, status=status.HTTP_200_OK)                          
         except Exception as e:
@@ -321,13 +320,28 @@ class MatchActionViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['GET'])
     def remaining_swipes(self, request):
         """Get remaining swipes for the current user"""
-        swipe_limit = SwipeLimit.objects.get_or_create(user=request.user)[0]
+        swipe_limit, created  = SwipeLimit.objects.get_or_create(user=request.user)[0]
         swipe_limit.reset_if_needed()
         
         return Response({
-            'remaining_likes': DAILY_LIKE_LIMIT - swipe_limit.daily_likes_count,
+            'remaining_likes': (DAILY_LIKE_LIMIT - swipe_limit.daily_likes_count) + swipe_limit.ad_boost_remaining,
             'remaining_super_likes': DAILY_SUPER_LIKE_LIMIT - swipe_limit.daily_super_likes_count
         })
+
+    @action(detail=False, methods=['POST'])
+    def ad_swipe_boost(self, request):
+        """Add ad swipe boost to the user"""
+        user = request.user
+        swipe_limit, created  = SwipeLimit.objects.get_or_create(user=user)
+        swipe_limit.add_ad_boost()
+        swipe_limit.reset_if_needed()
+
+        return Response({
+            'remaining_likes': (DAILY_LIKE_LIMIT - swipe_limit.daily_likes_count) + swipe_limit.ad_boost_remaining,
+            'remaining_super_likes': DAILY_SUPER_LIKE_LIMIT - swipe_limit.daily_super_likes_count
+        })
+
+
 
 class InteractionsViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
