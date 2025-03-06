@@ -102,6 +102,7 @@ def create_notification_and_send_push(recipient, actor, verb, target_id,
 
 @receiver(post_save, sender=Like)
 def handle_like_notification(sender, instance, created, **kwargs):
+    print('he')
    
     if created:
         try:

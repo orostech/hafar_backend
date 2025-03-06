@@ -118,45 +118,91 @@ class MatchActionViewSet(viewsets.ModelViewSet):
                             status=status.HTTP_429_TOO_MANY_REQUESTS
                         )
 
-                 # Remove any existing dislikes
+                # Remove any existing dislikes
                 Dislike.objects.filter(
                     disliker=user,
                     disliked_id=liked_user_id
                 ).delete()
 
-                Like.objects.update_or_create(
+                # Check if an active like already exists
+                existing_like = Like.objects.filter(
                     liker=user,
                     liked_id=liked_user_id,
-                    defaults={
-                        'is_active': True,
-                        'like_type': like_type}
-                )
-                mutual_like = Like.objects.filter(
-                    liker_id=liked_user_id,
-                    liked=user,
                     is_active=True
-                ).exists()
-                if mutual_like:
-                    Match.objects.update_or_create(
-                        user1=user,
-                        user2_id=liked_user_id,
-                        defaults={
-                            'is_active': True,
-                            'last_interaction': timezone.now()
-                        }
-                    )
-                # Update counters
-                if like_type == 'SUPER':
-                    swipe_limit.daily_super_likes_count += 1
+                ).first()
+                if existing_like:
+                    print('1 Creating new like')
+                    # If the like type is the same, we return an error
+                    if existing_like.like_type == like_type:
+                        return Response({'error': f'Already {like_type.lower()}d this user'},
+                                        status=status.HTTP_400_BAD_REQUEST)
+                    else:
+                        # If upgrading (e.g., REGULAR to SUPER), update the record
+                        if like_type == 'SUPER':
+                            # Check again that super like limits are not exceeded
+                            if swipe_limit.daily_super_likes_count >= DAILY_SUPER_LIKE_LIMIT:
+                                return Response({'error': 'Daily super like limit reached'},
+                                                status=status.HTTP_429_TOO_MANY_REQUESTS)
+                            swipe_limit.daily_super_likes_count += 1
+                        # (If you ever allow downgrading from SUPER to REGULAR, add your logic here)
+                        existing_like.like_type = like_type
+                        existing_like.save()
+                        # Check for mutual like and update/create match if needed
+                        mutual_like = Like.objects.filter(
+                            liker_id=liked_user_id,
+                            liked=user,
+                            is_active=True
+                        ).exists()
+                        if mutual_like:
+                            Match.objects.update_or_create(
+                                user1=user,
+                                user2_id=liked_user_id,
+                                defaults={
+                                    'is_active': True,
+                                    'last_interaction': timezone.now()
+                                }
+                            )
+                        swipe_limit.save()
+                        return Response({
+                            'match_created': mutual_like,
+                            'remaining_likes': (DAILY_LIKE_LIMIT - swipe_limit.daily_likes_count) + swipe_limit.ad_boost_remaining,
+                            'remaining_super_likes': DAILY_SUPER_LIKE_LIMIT - swipe_limit.daily_super_likes_count
+                        }, status=status.HTTP_200_OK)
                 else:
-                    swipe_limit.daily_likes_count += 1
-                swipe_limit.save()
+                    print('Creating new like')
+                    # Create a new like record if none exists
+                    like = Like.objects.create(
+                        liker=user,
+                        liked_id=liked_user_id,
+                        like_type=like_type
+                    )
+                    # Check for mutual like and create match if necessary
+                    mutual_like = Like.objects.filter(
+                        liker_id=liked_user_id,
+                        liked=user,
+                        is_active=True
+                    ).exists()
+                    if mutual_like:
+                        Match.objects.update_or_create(
+                            user1=user,
+                            user2_id=liked_user_id,
+                            defaults={
+                                'is_active': True,
+                                'last_interaction': timezone.now()
+                            }
+                        )
+                    # Update counters based on like type
+                    if like_type == 'SUPER':
+                        swipe_limit.daily_super_likes_count += 1
+                    else:
+                        swipe_limit.daily_likes_count += 1
+                    swipe_limit.save()
 
-                return Response({
-                    'match_created': mutual_like,
-                    'remaining_likes': (DAILY_LIKE_LIMIT - swipe_limit.daily_likes_count) + swipe_limit.ad_boost_remaining,
-                    'remaining_super_likes': DAILY_SUPER_LIKE_LIMIT - swipe_limit.daily_super_likes_count
-                }, status=status.HTTP_200_OK)
+                    return Response({
+                        'match_created': mutual_like,
+                        'remaining_likes': (DAILY_LIKE_LIMIT - swipe_limit.daily_likes_count) + swipe_limit.ad_boost_remaining,
+                        'remaining_super_likes': DAILY_SUPER_LIKE_LIMIT - swipe_limit.daily_super_likes_count
+                    }, status=status.HTTP_200_OK)
 
         except Exception as e:
             logger.error(f"Like error for user {user.id}: {str(e)}")
@@ -183,7 +229,7 @@ class MatchActionViewSet(viewsets.ModelViewSet):
                     liker=user,
                     liked_id=liked_user_id,
                     is_active=True
-                )
+                )             
                 if likes_to_deactivate.exists():
                     likes_to_deactivate.update(is_active=False)
 

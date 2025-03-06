@@ -26,7 +26,15 @@ class Like(models.Model):
         indexes = [
             models.Index(fields=['liker', 'liked','is_active']),
         ]
-        unique_together = ('liker', 'liked','is_active')
+        # unique_together = ('liker', 'liked','is_active')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['liker', 'liked'],
+                condition=models.Q(is_active=True),
+                name='unique_active_like'
+            ),
+        ]
+
 
     @property
     def coin_cost(self):
