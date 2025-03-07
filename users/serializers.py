@@ -10,6 +10,7 @@ from .models import (
     LGA, Profile, State, UserPhoto, UserVideo, UserBlock,
     Rating, UserAudioRecording, VideoPreference
 )
+from django.contrib.gis.geos import Point
 
 User = get_user_model()
 
@@ -196,6 +197,8 @@ class ProfileSerializer(serializers.ModelSerializer):
     #             print(m)
     #             return m
     #     return None
+
+
 class CurrentUserProfileSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField(source='user.id')
     username = serializers.CharField(source='user.username', read_only=True)
@@ -204,15 +207,34 @@ class CurrentUserProfileSerializer(serializers.ModelSerializer):
     email_verified = serializers.ReadOnlyField(source='user.email_verified')
     phone_verified  = serializers.ReadOnlyField(source='user.phone_verified')
     # device_token  = serializers.ReadOnlyField(source='user.device_token')
-    device_token = serializers.CharField(source='user.device_token', required=False, allow_blank=True)
+    device_token = serializers.CharField(source='user.device_token', required=False, allow_blank=True,  read_only=False)
     photos = UserPhotoSerializer(source='user.photos',many=True, read_only=True)
     wallet = WalletSerializer(source='user.wallet', read_only=True)
     age = serializers.SerializerMethodField()
     subscription = UserSubscriptionSerializer(source='user.active_subscription', read_only=True)
     is_premium = serializers.SerializerMethodField()
     latlng = serializers.SerializerMethodField()
-    selected_state = StateSerializer(read_only=True)
-    selected_lga = LGASerializer(read_only=True)
+    # selected_state = StateSerializer(read_only=True)
+    # selected_lga = LGASerializer(read_only=True)
+    # selected_state = serializers.PrimaryKeyRelatedField( queryset=State.objects.all(), required=False ) 
+    # selected_lga = serializers.PrimaryKeyRelatedField( queryset=LGA.objects.all(), required=False )
+    # Write field (accepts primary key)
+    selected_state = serializers.PrimaryKeyRelatedField(
+        queryset=State.objects.all(), required=False, write_only=True
+    )
+    # Read field (displays full details)
+    selected_state_details = StateSerializer(source='selected_state', read_only=True)
+    
+    # Write field (accepts primary key)
+    selected_lga = serializers.PrimaryKeyRelatedField(
+        queryset=LGA.objects.all(), required=False, write_only=True
+    )
+    # Read field (displays full details)
+    selected_lga_details = LGASerializer(source='selected_lga', read_only=True)
+    
+    
+    
+    
     average_rating = serializers.SerializerMethodField()
 
      
@@ -233,7 +255,12 @@ class CurrentUserProfileSerializer(serializers.ModelSerializer):
             'profession', 'relationship_goal', 'interested_in',   'body_type',   'complexion', 'do_you_have_kids', 'do_you_have_pets', 'weight', 'height', 'dietary_preferences', 'smoking',
             'drinking', 'relationship_status', 'instagram_handle',   'facebook_link',
             # Information Level 3
-            'latitude', 'longitude','latlng', 'address', 'state', 'country', 'selected_address', 'selected_state', 'selected_country', 'selected_lga', 'profile_visibility', 'show_online_status', 'show_distance',
+            'latitude', 'longitude','latlng', 'address', 'state', 'country', 'selected_address', 'selected_country',
+            # Write and read fields for selected_state and selected_lga:
+            'selected_state', 'selected_state_details', 'selected_country', 'selected_lga', 'selected_lga_details',
+            #  'selected_state',  'selected_lga', 
+             
+             'profile_visibility', 'show_online_status', 'show_distance',
             'user_type', 'is_verified',  'user_status', 'minimum_age_preference', 'maximum_age_preference', 'maximum_distance_preference', 'show_last_seen',
             # Information Level 4
             'email_notifications', 'push_notifications', 'in_app_notifications' , 'new_matches_notitication','new_messages_notitication', 'app_updates', 'profile_view_notitication',
@@ -263,29 +290,27 @@ class CurrentUserProfileSerializer(serializers.ModelSerializer):
         return obj.user.average_rating
     
     def update(self, instance, validated_data):
-        # user_data = {}
-        # for key, value in validated_data.items():
-        #     if key in ['username', 'first_name','last_name','phone','device_token']:
-        #         user_data[key] = value
-        #         print(user_data)
-        #     else:
-        #         setattr(instance, key, value)
-        # for attr, value in user_data.items():
-        #     setattr(instance.user, attr, value)
-
-         # Extract nested user data, defaulting to an empty dict if not present
-        # user_data = validated_data.pop('user', {})
+        # Extract nested user data (fields with source 'user')
+        user_data = validated_data.pop('user', {})
+    
         print(validated_data)
 
         # Update the Profile fields (non-user fields)
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
-        
-        # # Update the related User instance fields
-        # for attr, value in user_data.items():
-        #     setattr(instance.user, attr, value)
 
-        # instance.user.save(**user_data)
+        # If latitude and longitude are provided, update the location field accordingly
+        latitude = validated_data.get('latitude')
+        longitude = validated_data.get('longitude')
+        if latitude is not None and longitude is not None:
+            instance.location = Point(float(longitude), float(latitude))
+    
+        
+        # Update the related User instance fields
+        for attr, value in user_data.items():
+            setattr(instance.user, attr, value)
+        instance.user.save()
+
         instance.save()
         return  instance
     

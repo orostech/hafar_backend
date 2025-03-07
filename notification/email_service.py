@@ -19,8 +19,8 @@ class EmailService:
         """
         Helper method to send templated emails
         """
-        # if settings.DEBUG:
-        #     return print('Debug mode')
+        if settings.DEBUG:
+            return print("Debug mode email can't send")
         try:
             # Render HTML and text versions
             html_content = render_to_string(

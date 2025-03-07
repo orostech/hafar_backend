@@ -86,7 +86,12 @@ class PasswordResetRequestView(views.APIView):
             EmailService().send_password_reset_otp(user, otp.code)
 
             return Response({"message": "OTP sent to your email."}, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+         
+        error_message = " ".join(
+            [msg for messages in serializer.errors.values() for msg in messages]
+        )
+        return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class PasswordResetVerifyView(views.APIView):
@@ -97,13 +102,20 @@ class PasswordResetVerifyView(views.APIView):
         if serializer.is_valid():
             email = serializer.validated_data['email']
             code = serializer.validated_data['code']
-
             user = User.objects.get(email=email)
             otp = OTP.objects.filter(user=user, code=code).first()
             if otp and otp.is_valid():
+                if not user.email_verified:
+                    user.email_verified = True
+                    user.save()
                 return Response({"message": "OTP verified."}, status=status.HTTP_200_OK)
             return Response({"error": "Invalid or expired OTP."}, status=status.HTTP_400_BAD_REQUEST)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+         
+        error_message = " ".join(
+            [msg for messages in serializer.errors.values() for msg in messages]
+        )
+        return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class PasswordResetConfirmView(views.APIView):
@@ -205,10 +217,15 @@ class RegisterView(views.APIView):
                 **profile_data  # Unpack profile_data into the main dictionary
 
 
-                # serializer.data
+          
             }, status=status.HTTP_201_CREATED)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+ 
+        
+        error_message = " ".join(
+            [msg for messages in serializer.errors.values() for msg in messages]
+        )
+        return Response({"error": error_message}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LoginView(views.APIView):
@@ -403,18 +420,18 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
         self.perform_update(serializer)
 
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-            f'user_{request.user.id}',
-            {
-                'type': 'profile_update',
-                'data': {
-                    'message': 'Profile updated',
-                    'data': serializer.data,
-                    'updated_fields': list(request.data.keys())
-                }
-            }
-        )
+        # channel_layer = get_channel_layer()
+        # async_to_sync(channel_layer.group_send)(
+        #     f'user_{request.user.id}',
+        #     {
+        #         'type': 'profile_update',
+        #         'data': {
+        #             'message': 'Profile updated',
+        #             'data': serializer.data,
+        #             'updated_fields': list(request.data.keys())
+        #         }
+        #     }
+        # )
         return Response(serializer.data)
 
 

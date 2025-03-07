@@ -26,7 +26,7 @@ class LGAAdmin(admin.ModelAdmin):
 class UserAdmin(admin.ModelAdmin):
     list_display = ('username', 'email', 'first_name', 'last_name', 'is_active')
     search_fields = ('username', 'email', 'first_name', 'last_name')
-    list_filter = ('is_active', 'is_staff', 'email_verified', 'phone_verified','created_at')
+    list_filter = ('created_at','is_active', 'is_staff', 'email_verified', 'phone_verified')
     readonly_fields = ('id','old_id',)
 
 @admin.register(Profile)

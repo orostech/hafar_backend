@@ -4,7 +4,7 @@ import json
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.db import transaction
-
+from django.conf import settings
 from chat.serializers import ChatSerializer, MessageRequestSerializer, MiniMessageSerializer
 from match.serializers import ProfileMinimalSerializer
 
@@ -54,8 +54,9 @@ def create_notification_and_send_push(recipient, actor, verb, target_id,
     profileData = ProfileMinimalSerializer(profile, context={'user': recipient}).data
     title = title_template % profile.display_name if "%s" in title_template else title_template
     body = body_template % profile.display_name if "%s" in body_template else body_template
-           
-    if getattr(profile, push_enabled_field, False) and profile.push_notifications:
+
+   
+    if getattr(profile, push_enabled_field, False) and profile.push_notifications and not settings.DEBUG:
         try:
             # title = title_template % actor.profile.display_name if "%s" in title_template else title_template
             # body = body_template % actor.profile.display_name if "%s" in body_template else body_template
