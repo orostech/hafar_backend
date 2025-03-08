@@ -12,18 +12,34 @@ class ChatSerializer(serializers.ModelSerializer):
         model = Chat
         fields = ['id', 'participant', 'last_activity', 'last_message',  'is_active']
 
-    def get_participant(self, obj):
-        user = None
-        request = self.context.get('request')
-        if request:
-            user = request.user
-        else:
-            user = self.context.get('user')
+    # def get_participant(self, obj):
+    #     user = None
+    #     request = self.context.get('request')
+    #     if request:
+    #         user = request.user
+    #     else:
+    #         user = self.context.get('user')
 
+    #     if not user:
+    #        user = obj.user2
+    #     other_user = obj.user2 if user == obj.user1 else obj.user1
+    #     return  ProfileMinimalSerializer(other_user.profile).data
+
+    def get_participant(self, obj):
+        user = self.context.get('request').user if 'request' in self.context else self.context.get('user')
+        
         if not user:
-           user = obj.user2
+            return None
+
         other_user = obj.user2 if user == obj.user1 else obj.user1
-        return  ProfileMinimalSerializer(other_user.profile).data
+        if not other_user:
+            return None
+
+        # Check if the other user has a profile
+        if hasattr(other_user, 'profile'):
+            return ProfileMinimalSerializer(other_user.profile).data
+        else:
+            return None
     
 
     def get_last_message(self, obj):

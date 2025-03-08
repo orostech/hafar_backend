@@ -2,7 +2,7 @@
 from math import radians, sin, cos, sqrt, atan2
 from datetime import timedelta
 import logging
-from users.models import Profile
+from users.models import Profile, UserBlock
 from django.db import transaction
 from rest_framework import viewsets, status, pagination, views
 from rest_framework.decorators import action
@@ -23,6 +23,7 @@ from .serializers import (
     LikeSerializer, DislikeSerializer, MatchSerializer, ProfileMinimalSerializer, VisitSerializer
 )
 from django.conf import settings
+from django.contrib.gis.db.models.functions import Distance as DistanceFunc
 
 logger = logging.getLogger(__name__)
 
@@ -330,6 +331,9 @@ class MatchActionViewSet(viewsets.ModelViewSet):
         if filters['max_distance'] != profile.maximum_distance_preference:
             profile.maximum_distance_preference = filters['max_distance']
             updated = True
+        if filters['gender'] != profile.interested_in:
+            profile.interested_in = filters['gender']
+            updated = True
         if updated:
             profile.save()
 
@@ -487,43 +491,69 @@ class InteractionsViewSet(viewsets.ModelViewSet):
         return self.get_paginated_response(serializer.data)
 
 
-class NearByPagination(pagination.PageNumberPagination):
-    page_size = 50  # Set the number of items per page
-    # Allow client to override, e.g. ?page_size=20
-    page_size_query_param = 'page_size'
-    max_page_size = 100
+# class NearByPagination(pagination.PageNumberPagination):
+#     page_size = 50  # Set the number of items per page
+#     # Allow client to override, e.g. ?page_size=20
+#     page_size_query_param = 'page_size'
+#     max_page_size = 100
 
 
 class NearbyUsersView(views.APIView):
     permission_classes = [IsAuthenticated]
-    pagination_class = NearByPagination
+    # pagination_class = NearByPagination
 
     def get(self, request):
         lat = request.query_params.get('lat')
         lng = request.query_params.get('lng')
-        max_distance = request.query_params.get('distance', 200)  # km
+        max_distance = request.query_params.get('distance', 500)  # km
 
         if not request.user.profile.location:
             return Response({'error': 'Missing coordinates'}, status=400)
 
         try:
-            user_point = request.user.profile.location
-            # Point(float(lng), float(lat), srid=4326)
-            profiles = Profile.objects.filter(
-                location__distance_lte=(user_point, Distance(km=max_distance)),
-                user__is_active=True,
-                profile_visibility='VE'
-            ).exclude(user=request.user)
+            user = request.user
+            user_point = user.profile.location
+            excluded_users = set()
 
-            # serializer = ProfileMinimalSerializer(profiles, many=True)
-            # return Response(serializer.data)
-            paginator = pagination.PageNumberPagination()
-            result_page = paginator.paginate_queryset(profiles, request,)
-            serializer = ProfileMinimalSerializer(result_page, many=True,
+            excluded_users.update(Like.objects.filter(
+                liker=user).values_list('liked', flat=True))
+            excluded_users.update(Dislike.objects.filter(
+                disliker=user).values_list('disliked', flat=True))
+            excluded_users.update(UserBlock.objects.filter(Q(user=user) | Q(
+                blocked_user=user)).values_list('user', 'blocked_user'))
+            # Point(float(lng), float(lat), srid=4326)
+            base_query  = Profile.objects.filter(
+                location__distance_lte=(user_point, Distance(km=max_distance)),
+            ).exclude(Q(user__in=excluded_users) |
+                      Q(user=user) | Q(user_status__in=['IA', 'S', 'B', 'D']) | Q(profile_visibility='PP'))
+       
+            # base_query = base_queryset
+            # Apply Gender Filtering
+            if user.profile.interested_in != 'E':
+                base_query = base_query.filter(
+                    gender=user.profile.interested_in)
+                
+            # Sort by Distance
+            profiles = base_query.annotate(distance=DistanceFunc('location', user_point)).order_by('distance')[:50]
+
+           
+
+            # If we have fewer than 50, relax gender constraints
+            if len(profiles) < 50 and user.profile.interested_in != 'E':
+                additional_profiles = Profile.objects.filter(
+                    location__distance_lte=(user_point, Distance(km=max_distance))
+                ).exclude(Q(user__in=excluded_users) | Q(user_status__in=['IA', 'S', 'B', 'D']) | Q(profile_visibility='PP')).annotate(
+                    distance=DistanceFunc('location', user_point)
+                ).order_by('distance')[:50 - len(profiles)]
+
+                profiles = list(profiles) + list(additional_profiles)
+
+            
+
+            serializer = ProfileMinimalSerializer(profiles, many=True,
                                                   context={'request': request}
                                                   )
-            return paginator.get_paginated_response(serializer.data)
-
+            return Response({'data':serializer.data})
         except Exception as e:
             logger.error(f"Nearby users error: {str(e)}")
             return Response({'error': 'Failed to fetch nearby users'}, status=500)

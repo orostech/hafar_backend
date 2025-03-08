@@ -220,7 +220,6 @@ class User(AbstractUser, PermissionsMixin):
                 return True
         return False
 
-
 class Profile(models.Model):
     # Basic Information
     user = models.OneToOneField(settings.AUTH_USER_MODEL, primary_key=True,
