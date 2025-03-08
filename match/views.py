@@ -314,6 +314,7 @@ class MatchActionViewSet(viewsets.ModelViewSet):
             'min_age': int(request.query_params.get('min_age', profile.minimum_age_preference)),
             'max_age': int(request.query_params.get('max_age', profile.maximum_age_preference)),
             'max_distance': float(request.query_params.get('max_distance', profile.maximum_distance_preference)),
+            'gender': request.query_params.get('gender', profile.interested_in),
             'relationship_goal': request.query_params.get('relationship_goal'),
             'verified_only': request.query_params.get('verified') == 'true',
             'online_status': request.query_params.get('online') == 'true',
