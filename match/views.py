@@ -315,6 +315,7 @@ class MatchActionViewSet(viewsets.ModelViewSet):
             'max_age': int(request.query_params.get('max_age', profile.maximum_age_preference)),
             'max_distance': float(request.query_params.get('max_distance', profile.maximum_distance_preference)),
             'gender': request.query_params.get('gender', profile.interested_in),
+            'interested_in': request.query_params.get('interested_in', profile.interested_in),
             'relationship_goal': request.query_params.get('relationship_goal'),
             'verified_only': request.query_params.get('verified') == 'true',
             'online_status': request.query_params.get('online') == 'true',
@@ -516,10 +517,10 @@ class NearbyUsersView(views.APIView):
             user_point = user.profile.location
             excluded_users = set()
 
-            excluded_users.update(Like.objects.filter(
-                liker=user).values_list('liked', flat=True))
-            excluded_users.update(Dislike.objects.filter(
-                disliker=user).values_list('disliked', flat=True))
+            # excluded_users.update(Like.objects.filter(
+            #     liker=user).values_list('liked', flat=True))
+            # excluded_users.update(Dislike.objects.filter(
+            #     disliker=user).values_list('disliked', flat=True))
             excluded_users.update(UserBlock.objects.filter(Q(user=user) | Q(
                 blocked_user=user)).values_list('user', 'blocked_user'))
             # Point(float(lng), float(lat), srid=4326)

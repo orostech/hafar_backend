@@ -17,7 +17,6 @@ class ConfigurationViewSet(ReadOnlyModelViewSet):
     @action(detail=False, methods=['get'])
     def initial_load(self, request):
         config = self._get_configurations(),
-        print(config)
         response_data = {
             'app_versions': config[0].get('app_versions', {}),
             # 'app_config': self._get_configurations(),
