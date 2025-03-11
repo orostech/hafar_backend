@@ -10,6 +10,10 @@ class UserSubscriptionSerializer(serializers.ModelSerializer):
         read_only_fields = ['start_date', 'end_date', 'is_active']
 
 class SubscriptionPlanSerializer(serializers.ModelSerializer):
+    amount = serializers.SerializerMethodField()
     class Meta:
         model = SubscriptionPlan
-        fields = ['id', 'name','title','description','iap_apple_id','iap_google_id', 'coin_price', 'duration_days']
+        fields = ['id', 'name','title','description','iap_apple_id','iap_google_id', 'coin_price','amount', 'duration_days']
+
+    def get_amount(self, obj):
+        return obj.get_naira_amount()

@@ -22,65 +22,69 @@ from rest_framework.response import Response
 
 @api_view(['POST'])
 def flutterwave_webhook(request):
+    # Print the incoming payload for debugging
+    # print("Webhook Payload:", request.data)
+    
     if request.method == 'POST':
         try:
-            payload = request.data
+            payload = request.data  # Use request.data instead of request.json()
             tx_ref = payload.get('txRef')
             status = payload.get('status')
-            print(payload)
             if not tx_ref:
                 return Response({'status': 'invalid data'}, status=400)
             
             with transaction.atomic():
-                payment = PaymentTransaction.objects.select_for_update().get(reference=tx_ref)
-                
                 if status == 'successful':
+                    payment = PaymentTransaction.objects.select_for_update().get(reference=tx_ref)
+                
+                    # Verify payment with Flutterwave
                     handler = FlutterwaveHandler()
                     verification = handler.verify_payment(tx_ref)
-                    
-                    if verification is True:
-                        # Payment verification successful
+                    if verification['status'] == 'success':
+                        payment.status = 'COMPLETED'
+                        payment.user.wallet.add_coins(payment.coins)
+                        payment.save()
                         return JsonResponse({'status': 'success'})
-                    else:
-                        # Payment verification failed
-                        return JsonResponse({'status': 'failed', 'message': 'Payment verification failed'})
-                else:
-                    payment.status = 'FAILED'
-                    payment.save()
-                    return JsonResponse({'status': 'failed'})
+                
+                # If payment failed or verification failed
+                payment.status = 'FAILED'
+                payment.save()
+                return JsonResponse({'status': 'failed'})
                 
         except PaymentTransaction.DoesNotExist:
             return JsonResponse({'status': 'error', 'message': 'Payment not found'}, status=404)
         except Exception as e:
+            # Log the error for debugging
+            # print("Webhook Error:", str(e))
             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
     
     return JsonResponse({'status': 'invalid method'}, status=405)
 
 
-# # wallet/webhooks.py
-# @api_view(['POST'])
-# def flutterwave_subscription_webhook(request):
-#     try:
-#         payload = request.data
-#         tx_ref = payload.get('tx_ref')
-#         status = payload.get('status')
+# wallet/webhooks.py
+@api_view(['POST'])
+def flutterwave_subscription_webhook(request):
+    try:
+        payload = request.data
+        tx_ref = payload.get('tx_ref')
+        status = payload.get('status')
         
-#         transaction = PaymentTransaction.objects.get(reference=tx_ref)
-#         if status == 'successful':
-#             verification = FlutterwaveHandler().verify_payment(tx_ref)
-#             if verification['status'] == 'success':
-#                 # Create subscription
-#                 UserSubscription.objects.create(
-#                     user=transaction.user,
-#                     plan=transaction.subscription_plan,
-#                     purchase_method='FLUTTERWAVE',
-#                     payment_reference=tx_ref,
-#                     is_active=True
-#                 )
-#                 transaction.status = 'COMPLETED'
-#                 transaction.save()
+        transaction = PaymentTransaction.objects.get(reference=tx_ref)
+        if status == 'successful':
+            verification = FlutterwaveHandler().verify_payment(tx_ref)
+            if verification['status'] == 'success':
+                # Create subscription
+                UserSubscription.objects.create(
+                    user=transaction.user,
+                    plan=transaction.subscription_plan,
+                    purchase_method='FLUTTERWAVE',
+                    payment_reference=tx_ref,
+                    is_active=True
+                )
+                transaction.status = 'COMPLETED'
+                transaction.save()
                 
-#         return JsonResponse({'status': 'success'})
+        return JsonResponse({'status': 'success'})
         
-#     except Exception as e:
-#         return JsonResponse({'error': str(e)}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)

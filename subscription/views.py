@@ -1,7 +1,9 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status,views
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+
+from wallet.payment_handlers import FlutterwaveHandler
 from .models import SubscriptionPlan, UserSubscription
 from .serializers import SubscriptionPlanSerializer, UserSubscriptionSerializer
 from wallet.models import Transaction
@@ -87,6 +89,83 @@ def get_google_auth_token():
         scopes=['https://www.googleapis.com/auth/androidpublisher']
     )
     return credentials.get_access_token().access_token
+
+
+class SubscriptionPaymentView(views.APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        request={
+            "type": "object",
+            "properties": {
+                "plan_id": {"type": "integer"},
+                "payment_method": {"type": "string", "enum": ["IAP", "FLUTTERWAVE"]},
+                "payment_data": {"type": "object"}  # For IAP receipt or Flutterwave data
+            }
+        }
+    )
+    def post(self, request):
+        try:
+            plan = SubscriptionPlan.objects.get(id=request.data['plan_id'], is_active=True)
+            payment_method = request.data.get('payment_method', 'IAP')
+            
+            if payment_method == 'IAP':
+                # Existing IAP validation
+                is_valid, error_msg = validate_platform_purchase(
+                    request.data['payment_data'], 
+                    request.data.get('platform', 'ANDROID')
+                )
+                if not is_valid:
+                    return Response({'error': error_msg}, status=400)
+                
+                platform = request.data.get('platform', 'ANDROID')
+                subscription = UserSubscription.objects.create(
+                    user=request.user,
+                    plan=plan,
+                    purchase_method='PLAY_STORE' if platform == 'ANDROID' else 'APP_STORE',
+                    is_active=True
+                )
+                
+            elif payment_method == 'FLUTTERWAVE':
+                # Initialize Flutterwave payment
+                handler = FlutterwaveHandler()
+                payment_url = handler.initialize_subscription_payment(
+                    user=request.user,
+                    plan=plan
+                )
+                return Response({'payment_url': payment_url})
+                
+            return Response(UserSubscriptionSerializer(subscription).data)
+            
+        except Exception as e:
+            return Response({'error': str(e)}, status=400)
+
+
+
+
+
+
+class SubscriptionVerifyPaymentView(views.APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        tx_ref = request.query_params.get('tx_ref')
+        if not tx_ref:
+            return Response({'error': 'Missing transaction reference'}, status=400)
+
+        handler = FlutterwaveHandler()
+        try:
+            is_valid = handler.verify_payment(tx_ref)
+            return Response({'status': 'success' if is_valid else 'failed'})
+        except Exception as e:
+            return Response({'error': str(e)}, status=400)
+
+
+
+
+
+
+
+
 class SubscriptionPlanViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = SubscriptionPlan.objects.filter(is_active=True)
     serializer_class = SubscriptionPlanSerializer

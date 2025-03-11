@@ -2,6 +2,8 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 
+from wallet.models import CoinRate
+
 class SubscriptionPlan(models.Model):
     TIER_CHOICES = [
         ('WEEKLY', 'Weekly'),
@@ -11,7 +13,6 @@ class SubscriptionPlan(models.Model):
     
     name = models.CharField(max_length=20, choices=TIER_CHOICES, unique=True)
     title = models.CharField(max_length=30, blank=True,)
-
     coin_price = models.PositiveIntegerField()
     duration_days = models.PositiveIntegerField()
     description = models.TextField( null=True, blank=True)
@@ -26,12 +27,23 @@ class SubscriptionPlan(models.Model):
 
     def __str__(self):
         return f"{self.get_name_display()} Plan - {self.coin_price} coins"
+    
+    def get_naira_amount(self):
+        from decimal import Decimal
+        try:
+            current_rate = CoinRate.objects.filter(is_active=True).latest('created_at').rate
+            naira_amount = Decimal(str(self.coin_price)) / Decimal(str(current_rate))
+            return naira_amount
+        except CoinRate.DoesNotExist:
+            naira_amount = Decimal(str(self.coin_price)) / Decimal('0.1')
+            return naira_amount
 
 class UserSubscription(models.Model):
     PURCHASE_METHODS = [
         ('COINS', 'Coins'),
         ('PLAY_STORE', 'Play Store'),
         ('APP_STORE', 'App Store'),
+        
     ]
     
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='subscriptions')
@@ -40,6 +52,7 @@ class UserSubscription(models.Model):
     start_date = models.DateTimeField(auto_now_add=True)
     end_date = models.DateTimeField()
     is_active = models.BooleanField(default=True)
+    payment_reference = models.CharField(max_length=100, blank=True, null=True)
     
     class Meta:
         ordering = ['-start_date']
