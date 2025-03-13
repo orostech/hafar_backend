@@ -71,6 +71,8 @@ class ProfileMinimalSerializer(serializers.ModelSerializer):
                 return photo.image_url
             return photo.image.url
         return None
+    
+    
     def get_latlng(self, obj):
         return obj.latlng()
 

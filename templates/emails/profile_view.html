@@ -7,12 +7,28 @@
 <h2>Hello {{ user.profile.display_name }}!</h2>
 <p>We’re excited to let you know that {{ visitor.profile.display_name }} has viewed your profile!</p>
 <p>This could be your chance to connect with them. Don’t miss out!</p>
-<center>
+{% comment %} <center>
     <a href="{{ profile_url }}" class="button">View Their Profile</a>
+</center> {% endcomment %}
+<center>
+    <a href="{{ play_store_url }}" target="_blank" style="display: inline-block; margin: 10px;">
+        <img src="https://assets.stickpng.com/images/5a902dbf7f96951c82922875.png" alt="Get on Google Play" style="height: 50px;">
+    </a>
+    <p style="color: #888; margin-top: 5px;">
+        iOS version coming soon! 🚀
+    </p>
 </center>
 <p>Or, if you're ready to start a conversation:</p>
-<center>
+{% comment %} <center>
     <a href="{{ message_url }}" class="button">Send a Message</a>
+</center> {% endcomment %}
+<center>
+    <a href="{{ play_store_url }}" target="_blank" style="display: inline-block; margin: 10px;">
+        <img src="https://assets.stickpng.com/images/5a902dbf7f96951c82922875.png" alt="Get on Google Play" style="height: 50px;">
+    </a>
+    <p style="color: #888; margin-top: 5px;">
+        iOS version coming soon! 🚀
+    </p>
 </center>
 <p>Stay connected and keep exploring new matches!</p>
 {% endblock %}

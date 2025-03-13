@@ -6,8 +6,16 @@
 <h2>Hi {{ user.profile.display_name }}!</h2>
 <p>You can now message with {{ other_user.profile.display_name }}!</p>
 <p>Start the conversation and get to know each other better.</p>
-<center>
+{% comment %} <center>
     <a href="{{ chat_url }}" class="button">Open Chat</a>
+</center> {% endcomment %}
+<center>
+    <a href="{{ play_store_url }}" target="_blank" style="display: inline-block; margin: 10px;">
+        <img src="https://assets.stickpng.com/images/5a902dbf7f96951c82922875.png" alt="Get on Google Play" style="height: 50px;">
+    </a>
+    <p style="color: #888; margin-top: 5px;">
+        iOS version coming soon! 🚀
+    </p>
 </center>
 <p style="margin-top: 25px;">
     <small>This chat was created because you both matched and agreed to connect.</small>

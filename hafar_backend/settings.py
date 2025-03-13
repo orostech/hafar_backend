@@ -15,8 +15,24 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DEBUG = config('DEBUG', default=False, cast=bool)
 
 
+
+
 SECRET_KEY = config('SECRET_KEY')
 ALLOWED_HOSTS = config('ALLOWED_HOSTS',cast=Csv())
+
+
+# CORS_ALLOW_ALL_ORIGINS = True  # For development only
+
+
+# CORS_ALLOWED_ORIGINS = [
+#    "http://localhost:64975",
+#    "https://2938-102-89-69-178.ngrok-free.app"
+# # #     "http://127.0.0.1:8000",
+# # #     "http://localhost",
+# # #     "http://10.0.2.2:8000",    # Android emulator
+# ]
+
+
 FLUTTERWAVE_SECRET_KEY = config('FLUTTERWAVE_SECRET_KEY')
 
 APP_PACKAGE_NAME= 'com.orostech.hafar'
@@ -35,12 +51,14 @@ INSTALLED_APPS = [
 
     # APPS
     'rest_framework',
+    #  'corsheaders',
     'rest_framework_simplejwt',
     'channels',
     'storages',
     'drf_yasg',
     'drf_spectacular',
     'django_jsonform',
+    'django_filters',
     'django_cryptography',
     
     # HAFAR APPS
@@ -57,9 +75,9 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-
-    'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
+    'django.middleware.common.CommonMiddleware',
+  
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -202,6 +220,11 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100MB
 
 
+
+# if DEBUG:
+#     SECURE_SSL_REDIRECT = False
+#     SECURE_PROXY_SSL_HEADER = None
+# else:
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = True

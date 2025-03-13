@@ -9,6 +9,7 @@ from notification.email_service import EmailService
 from notification.services import FirebaseNotificationService
 from wallet.webhooks import flutterwave_webhook
 from django.shortcuts import render
+from config.urls import admin_users_patterns
 class APIRootView(views.APIView):
     """
     A simple view to respond to GET requests to the root of the API.
@@ -38,16 +39,18 @@ class APIIRootView(views.APIView):
         try:
             context = {
                 'user': request.user,
-                'matched_with': 'matched_user',  # Replace with actual matched user
+                'matched_with': request.user,  # Replace with actual matched user
                 'match_url': f"{settings.FRONTEND_URL}/matches/123",  # Replace with actual match ID
-                'site_name': 'Your Site Name'  # Replace with actual site name
+                'site_name': 'Hafar',
+                'play_store_url':"https://play.google.com/store/apps/details?id=com.orostech.hafar"
             }
             try:
-                # EmailService().send_match_notification(Match.objects.get(id=19))
+                EmailService().send_revival_announcement()
+                # send_welcome_email(request.user)
                 pass
             except Exception as e:
-               print(f"Match email notification failed: {str(e)}")
-            return render(request, 'emails/new_match.html', context)
+               print(f"email notification failed: {str(e)}")
+            return render(request, 'emails/platform_back_announcement.html', context)
         except:
             return views.Response({"message": "failed."})
 
@@ -72,14 +75,18 @@ urlpatterns = [
     path("", APIRootView.as_view(), name='api-root'),
     path('', include(v1patterns)),
     path('v1/', include(apipatterns)),
+    path('a1/', include(admin_users_patterns)),
     path('webhooks/flutterwave/', flutterwave_webhook, name='flutterwave-webhook'),
     path('test/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('admin/', admin.site.urls),
-     path("mm/", APIIRootView.as_view(), name='apii-root'),
+
+    #  path("mm/", APIIRootView.as_view(), name='apii-root'),
 
     ]
 
+if settings.DEBUG:
+    urlpatterns.append(path("mm/", APIIRootView.as_view(), name='apii-root'))
 
 
 

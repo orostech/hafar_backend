@@ -1,0 +1,138 @@
+<!-- templates/emails/platform_back_announcement.html -->
+{% extends "emails/base.html" %}
+
+{% block title %}Hafar 2.0: Your Love Journey Just Got Smarter! 🔥{% endblock %}
+
+{% block content %}
+
+<h2 style="color: #333; margin-top: 20px;">Welcome Back, {{ user.profile.display_name }}! 👋</h2>
+<p>During our upgrade break, we've rebuilt Hafar from the ground up to become your ultimate dating companion. Here's what awaits:</p>
+
+<div style="background: #fff8fb; padding: 25px; border-radius: 12px; margin: 30px 0;">
+    <h3 style="color: #ff4b7d; border-left: 4px solid #ff4b7d; padding-left: 15px;">Your Anti-Spam Armory 🛡️</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+        <div style="background: white; padding: 15px; border-radius: 8px;">
+            <h4>🔒 Request-to-Chat System</h4>
+            <p>No more unwanted messages - control who enters your DMs</p>
+        </div>
+        <div style="background: white; padding: 15px; border-radius: 8px;">
+            <h4>⏱️ Smart Message Limits</h4>
+            <p>Automatic spam detection for quality conversations</p>
+        </div>
+        <div style="background: white; padding: 15px; border-radius: 8px;">
+            <h4>⭐ Credibility Score</h4>
+            <p>Rate users after meaningful exchanges for better matches</p>
+        </div>
+    </div>
+</div>
+
+<div style="background: #fff3f7; padding: 20px; border-radius: 10px; margin: 25px 0;">
+    <h3 style="color: #ff4b7d; margin-top: 0;">What's New in Your Love Journey?</h3>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div style="padding: 15px; background: white; border-radius: 8px;">
+            <h4>🎯 Smarter Matching</h4>
+            <ul>
+                <li>Enhanced LGA/State filters</li>
+                <li>Premium visibility boost</li>
+                <li>Credibility rating system</li>
+            </ul>
+        </div>
+
+        <div style="padding: 15px; background: white; border-radius: 8px;">
+            <h4>🗺️ Live Exploration</h4>
+            <ul>
+                <li>Real-time interactive map</li>
+                <li>Ad-supported map access</li>
+                <li>Instant profile previews</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<h3 style="color: #ff4b7d;">Your Anti-Spam Armory ⚔️</h3>
+<ul>
+    <li><strong>Message Requests:</strong> No more unwanted DMs</li>
+    <li><strong>Reaction Controls:</strong> WhatsApp-style message reactions</li>
+    <li><strong>Smart Limits:</strong> 10 daily quality swipes</li>
+</ul>
+
+<center style="margin: 40px 0;">
+    <a href="{{ play_store_url }}" class="button" style="background: #ff4b7d; padding: 15px 30px; font-size: 1.2em;">
+        🔥 Rekindle Your Journey Now
+    </a>
+    <div style="margin-top: 20px;">
+        <img src="https://assets.stickpng.com/images/5a902dbf7f96951c82922875.png" alt="Get on Google Play" style="height: 50px;">
+        <p style="color: #888; margin: 10px 0;">iOS Version Coming Soon! 🍎</p>
+    </div>
+</center>
+
+<div style="border-top: 2px dashed #ff4b7d; padding-top: 25px;">
+    <h3 style="color: #ff4b7d;">Why 85% of Returning Users Find Better Matches? 🏆</h3>
+    <div style="columns: 2;">
+        <p>✅ AI-Powered Suggestions<br>
+        ✅ Live Map Discovery<br>
+        ✅ Mutual Rating System<br>
+        ✅ Localized Matching</p>
+        
+        <p>✅ Ad-Supported Perks<br>
+        ✅ Read Receipts<br>
+        ✅ Super-Like Alerts<br>
+        ✅ Visitor Tracking</p>
+        
+    </div>
+</div>
+<div style="border: 2px dashed #ff4b7d; padding: 25px; border-radius: 12px; margin: 30px 0;">
+    <h3 style="color: #ff4b7d; text-align: center;">Your New Matchmaking Toolkit 🔍</h3>
+    <div style="columns: 2; margin: 25px 0;">
+        <div style="break-inside: avoid;">
+            <h4>🎯 Hyper-Local Matching</h4>
+            <ul>
+                <li>Search by LGA/State boundaries</li>
+                <li>Live user density heatmap</li>
+                <li>Cultural preference filters</li>
+            </ul>
+        </div>
+        <div style="break-inside: avoid;">
+            <h4>🗺️ Real-Time Exploration</h4>
+            <ul>
+                <li>Interactive radar map</li>
+                <li>3D profile clusters</li>
+                <li>Incognito browsing mode</li>
+            </ul>
+        </div>
+    </div>
+    <center>
+        <a href="{{ play_store_url }}" style="display: inline-block; background: linear-gradient(135deg, #ff4b7d 0%, #ff6b6b 100%); color: white; padding: 15px 40px; border-radius: 30px; text-decoration: none; font-weight: bold; box-shadow: 0 4px 15px rgba(255,75,125,0.3);">
+            🚀 Activate My Free Profile
+        </a>
+    </center>
+</div>
+
+
+<div style="text-align: center; margin: 40px 0;">
+    <h3 style="color: #ff4b7d;">Why 12,368 Users Reactivated? ❤️</h3>
+    <div style="display: inline-block; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
+        <p style="font-style: italic;">"Found 4 quality matches in Lagos within a week - the new map feature is genius!"</p>
+        <p>- Amina, 28 (Premium Member)</p>
+    </div>
+</div>
+
+
+<center style="margin: 40px 0;">
+    <div style="max-width: 500px;">
+        <a href="{{ play_store_url }}" style="display: block; margin-bottom: 20px;">
+            <img src="https://assets.stickpng.com/images/5a902dbf7f96951c82922875.png" alt="Google Play" style="height: 60px;">
+        </a>
+        <div style="background: #e8e8e8; padding: 15px; border-radius: 8px;">
+            <p style="margin: 0; color: #666;">iOS warriors - Hold tight!<br>Launching App Store version in Q4 2024 🍎</p>
+        </div>
+    </div>
+</center>
+
+<div style="border-top: 1px solid #eee; padding-top: 25px; text-align: center;">
+    <p style="font-size: 0.9em; color: #666;">Need help? <a href="{{ help_url }}" style="color: #ff4b7d;">Visit our support center</a></p>
+</div>
+
+<p style="text-align: center; margin-top: 30px; font-size: 0.9em; color: #666;">P.S. Check your profile - we've added 5 free Super Likes as a welcome back gift! 🎁</p>
+{% endblock %}

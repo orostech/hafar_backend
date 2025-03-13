@@ -67,58 +67,23 @@ class EmailService:
             text_content = strip_tags(html_content)
 
             # Prepare batch emails
-            emails = []
-            for user in recipients:
-                self._send_email_template(
-                    user.email,
-                    f"{self.site_name} is Back with Exciting Updates!",
-                    'platform_back_announcement',
-                    context
-                )
+            emails = [{
+                'From': self.default_from_email,
+                'To': user.email,
+                'Subject': f"{self.site_name} is Back with Exciting Updates!",
+                'HtmlBody': html_content,
+                'TextBody': text_content,
+                'MessageStream': 'broadcast'
+            } for user in recipients]
 
-                # email = {
-                #     'From': self.default_from_email,
-                #     'To': user.email,
-                #     'Subject': f"{self.site_name} is Back with Exciting Updates!",
-                #     'HtmlBody': html_content,
-                #     'TextBody': text_content,
-                #     'MessageStream': 'outbound'
-                # }
-                # emails.append(email)
-
-            all_success = True
-            
+            # Send batch (Postmark allows up to 500 per batch)
             for i in range(0, len(emails), 500):
                 batch = emails[i:i+500]
-                
-                try:
-                    responses = self.client.emails.send_batch(batch)
-                    logger.debug(f"Batch Response: {responses}")
-
-                    for response in responses:
-                        if not isinstance(response, dict):
-                            all_success = False
-                            logger.error(f"Invalid response format: {response}")
-                        elif response.get('ErrorCode', 1) != 0:
-                            all_success = False
-                            logger.error(f"Email sending failed for an email: {response}")
-                        
-                except Exception as e:
-                    all_success = False
-                    logger.error(f"Batch email sending failed: {str(e)}", exc_info=True)
-                        
-                        
-                        
+                self.client.emails.send_batch(batch)
             
-            
-            
-            if all_success:
-                logger.info(f"Sent bulk announcement to {len(recipients)} users successfully")
-            else:
-                logger.error("Some emails in bulk announcement failed to send.")
-            return all_success
+            logger.info(f"Sent bulk announcement to {len(recipients)} users")
+            return True
         except Exception as e:
-            
             logger.error(f"Bulk email failed: {str(e)}")
             return False
 
@@ -130,10 +95,6 @@ class EmailService:
         # active_users = User.objects.filter(is_active=True)
         active_users = User.objects.filter(email='mabsademola@gmail.com')
         return self.send_bulk_announcement(active_users)
-    
-
-
-    
     def send_welcome_email(self, user):
         """Send welcome email after registration"""
         context = {

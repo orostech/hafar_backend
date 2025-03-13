@@ -1,0 +1,71 @@
+<!-- templates/emails/platform_back_announcement.html -->
+{% extends "emails/base.html" %}
+
+{% block title %}Hafar's Back, Better Than Ever! 🌟{% endblock %}
+
+{% block content %}
+<h2>Dear {{ user.profile.display_name }},</h2>
+
+<p>We've listened, learned, and leveled up! After our strategic migration break, Hafar returns with groundbreaking features to revolutionize your dating experience. 🚀</p>
+
+<div style="background: #fff3f7; padding: 20px; border-radius: 10px; margin: 25px 0;">
+    <h3 style="color: #ff4b7d; margin-top: 0;">What's New in Your Love Journey?</h3>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div style="padding: 15px; background: white; border-radius: 8px;">
+            <h4>🎯 Smarter Matching</h4>
+            <ul>
+                <li>Enhanced LGA/State filters</li>
+                <li>Premium visibility boost</li>
+                <li>Credibility rating system</li>
+            </ul>
+        </div>
+
+        <div style="padding: 15px; background: white; border-radius: 8px;">
+            <h4>🗺️ Live Exploration</h4>
+            <ul>
+                <li>Real-time interactive map</li>
+                <li>Ad-supported map access</li>
+                <li>Instant profile previews</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<h3 style="color: #ff4b7d;">Your Anti-Spam Armory ⚔️</h3>
+<ul>
+    <li><strong>Message Requests:</strong> No more unwanted DMs</li>
+    <li><strong>Reaction Controls:</strong> WhatsApp-style message reactions</li>
+    <li><strong>Smart Limits:</strong> 10 daily quality swipes</li>
+</ul>
+
+<center style="margin: 40px 0;">
+    <a href="{{ play_store_url }}" class="button" style="background: #ff4b7d; padding: 15px 30px; font-size: 1.2em;">
+        🔥 Rekindle Your Journey Now
+    </a>
+    <div style="margin-top: 20px;">
+        <img src="https://example.com/images/play-store-badge.png" alt="Get on Google Play" style="height: 45px;">
+        <p style="color: #888; margin: 10px 0;">iOS Version Coming Soon! 🍎</p>
+    </div>
+</center>
+
+<div style="border-top: 2px dashed #ff4b7d; padding-top: 25px;">
+    <h3 style="color: #ff4b7d;">Why 85% of Returning Users Find Better Matches? 🏆</h3>
+    <div style="columns: 2;">
+        <p>✅ AI-Powered Suggestions<br>
+        ✅ Live Map Discovery<br>
+        ✅ Mutual Rating System<br>
+        ✅ Localized Matching</p>
+        
+        <p>✅ Ad-Supported Perks<br>
+        ✅ Read Receipts<br>
+        ✅ Super-Like Alerts<br>
+        ✅ Visitor Tracking</p>
+        
+    </div>
+</div>
+
+<p style="text-align: center; margin: 30px 0 20px; font-style: italic;">
+    "More than 12,000 meaningful connections made since our relaunch!"
+</p>
+{% endblock %}
