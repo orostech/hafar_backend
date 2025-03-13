@@ -119,18 +119,18 @@ class MatchingService:
             base_queryset = base_queryset.filter(filter_conditions)
         print(len(base_queryset))
 
-           # Add online status annotation
-        base_queryset = base_queryset.annotate(
-            is_online=Case(
-                When(last_seen__gte=timezone.now()-timedelta(minutes=60), then=Value(1)),
-                default=Value(0),
-                output_field=IntegerField()
-            )
-        )
+        #    # Add online status annotation
+        # base_queryset = base_queryset.annotate(
+        #     is_online=Case(
+        #         When(last_seen__gte=timezone.now()-timedelta(minutes=60), then=Value(1)),
+        #         default=Value(0),
+        #         output_field=IntegerField()
+        #     )
+        # )
         # Ordering logic
         if has_distance_annotation:
-            return base_queryset.order_by('-is_online', '-verified_rank', 'distance')
-        return base_queryset.order_by('-is_online','-verified_rank')
+            return base_queryset.order_by( '-verified_rank', 'distance')
+        return base_queryset.order_by('-verified_rank')
      
 
 
