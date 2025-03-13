@@ -35,7 +35,7 @@ class AppMaintenance(models.Model):
     platform = models.CharField(max_length=10, choices=[('all', 'All'), ('android', 'Android'), ('ios', 'iOS')])
     message = models.TextField( default="Our app is currently undergoing maintenance to bring you an even better experience. We apologize for any inconvenience this may cause. Please check back later, and thank you for your patience!",)
     is_active = models.BooleanField(default=False)
-    start_time = models.DateTimeField()
+    start_time = models.DateTimeField(auto_now_add=True)
     end_time = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add=True)
 
