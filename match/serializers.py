@@ -38,15 +38,16 @@ class ProfileMinimalSerializer(serializers.ModelSerializer):
     age = serializers.SerializerMethodField()
     profile_photo = serializers.SerializerMethodField()
     is_new_user = serializers.SerializerMethodField()
-    online_status= serializers.SerializerMethodField()
     is_premium = serializers.SerializerMethodField()
     latlng = serializers.SerializerMethodField()
     average_rating = serializers.SerializerMethodField()
+    online_status = serializers.SerializerMethodField()
+    is_online = serializers.BooleanField()
 
     class Meta:
         model = Profile
         fields = ['id','old_id', 'display_name', 'age', 'profile_photo', 'bio','gender',
-                  'is_new_user','online_status','is_premium','latlng','average_rating'
+                  'is_new_user','online_status','is_premium','latlng','average_rating','online_status', 'is_online'
                   ]
 
     def get_age(self, obj):

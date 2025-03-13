@@ -83,7 +83,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 
     # ... other middleware ...
-    # 'users.middleware.UpdateLastSeenMiddleware',
+    'users.middleware.UpdateLastSeenMiddleware',
 ]
 
 SERVER_DOMAIN = 'api.joinhafar.com'

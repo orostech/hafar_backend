@@ -370,13 +370,21 @@ class Profile(models.Model):
 
     @property
     def online_status(self):
-        """ Returns the online status of the user. """
-        if (timezone.now() - self.last_seen) < timedelta(minutes=30):
-            return 'ONLINE'
-        elif (timezone.now() - self.last_seen) < timedelta(minutes=60):
-            return 'AWAY'
-        else:
-            return 'OFFLINE'
+        """Cached online status with 30-second freshness"""
+        cache_key = f'user_{self.user_id}_status'
+        status = cache.get(cache_key)
+        
+        if not status:
+            now = timezone.now()
+            if (now - self.last_seen) < timedelta(minutes=15):
+                status = 'ONLINE'
+            elif (now - self.last_seen) < timedelta(minutes=40):
+                status = 'AWAY'
+            else:
+                status = 'OFFLINE'
+            cache.set(cache_key, status, timeout=30)  # Cache for 30 seconds
+        
+        return status
 
     @property
     def is_new_user(self):
@@ -395,15 +403,6 @@ class Profile(models.Model):
         elif days_since_join <= 7:
             return 'New User'
         return 'Existing User'
-
-    def update_last_seen(self):
-        """
-        Manually update last_seen timestamp.
-        Useful for specific actions like sending messages or updating profile.
-        """
-        self.__class__.objects.filter(id=self.id).update(
-            last_seen=timezone.now()
-        )
 
     @property
     def last_active_time(self):
@@ -429,13 +428,12 @@ class Profile(models.Model):
             return f"Active {days} days ago"
 
     def latlng(self):
-        # If the location PointField exists, use it
+     
         if self.location:
             return {
-                'latitude': self.location.y,  # y corresponds to latitude
-                'longitude': self.location.x,  # x corresponds to longitude
+                'latitude': self.location.y,  
+                'longitude': self.location.x, 
             }
-        # Optionally, fall back to the separate latitude and longitude fields if available
         elif self.latitude is not None and self.longitude is not None:
             return {
                 'latitude': self.latitude,
@@ -456,17 +454,10 @@ class Profile(models.Model):
         ]
         completed = sum(1 for field in required_fields if field)
         return completed / len(required_fields)
-
-    # @property
-    # def age(self):
-    #     return (timezone.now().date() - self.birthdate).days // 365
-
-    # @property
-    # def location(self):
-    #     return self.profile.location
-
-    # def common_interests_with(self, other_user):
-    #     return self.interests.filter(id__in=other_user.interests.all())
+    
+    @property
+    def is_online(self):
+        return self.online_status == 'ONLINE'
 
 
 class Rating(models.Model):

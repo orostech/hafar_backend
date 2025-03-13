@@ -118,6 +118,7 @@ class ProfileSerializer(serializers.ModelSerializer):
     is_premium = serializers.SerializerMethodField()
     is_new_user = serializers.SerializerMethodField()
     online_status= serializers.SerializerMethodField()
+    is_online = serializers.BooleanField()
     latlng = serializers.SerializerMethodField()
     selected_state = StateSerializer(read_only=True)
     selected_lga = LGASerializer(read_only=True)
@@ -137,7 +138,7 @@ class ProfileSerializer(serializers.ModelSerializer):
                  'profession', 'relationship_goal','relationship_status', 'interested_in',   'body_type',   'complexion', 'do_you_have_kids', 'do_you_have_pets', 'weight', 'height','drinking', 'dietary_preferences', 'smoking',   
                 # Information Level 3
                 'latlng', 'address', 'state', 'country', 'selected_address', 'selected_state','selected_lga', 'selected_country', 'selected_lga','show_online_status', 'show_distance',
-                'user_type', 'is_verified',  'user_status', 'minimum_age_preference', 'maximum_age_preference', 'maximum_distance_preference', 'show_last_seen','is_new_user','online_status',
+                'user_type', 'is_verified',  'user_status', 'minimum_age_preference', 'maximum_age_preference', 'maximum_distance_preference', 'show_last_seen','is_new_user','online_status','is_online',
                  'has_liked', 'has_disliked', 'has_super_liked')
         
         
@@ -206,7 +207,6 @@ class CurrentUserProfileSerializer(serializers.ModelSerializer):
     phone = serializers.ReadOnlyField(source='user.phone')
     email_verified = serializers.ReadOnlyField(source='user.email_verified')
     phone_verified  = serializers.ReadOnlyField(source='user.phone_verified')
-    # device_token  = serializers.ReadOnlyField(source='user.device_token')
     device_token = serializers.CharField(source='user.device_token', required=False, allow_blank=True,  read_only=False)
     photos = UserPhotoSerializer(source='user.photos',many=True, read_only=True)
     wallet = WalletSerializer(source='user.wallet', read_only=True)
@@ -214,22 +214,14 @@ class CurrentUserProfileSerializer(serializers.ModelSerializer):
     subscription = UserSubscriptionSerializer(source='user.active_subscription', read_only=True)
     is_premium = serializers.SerializerMethodField()
     latlng = serializers.SerializerMethodField()
-    # selected_state = StateSerializer(read_only=True)
-    # selected_lga = LGASerializer(read_only=True)
-    # selected_state = serializers.PrimaryKeyRelatedField( queryset=State.objects.all(), required=False ) 
-    # selected_lga = serializers.PrimaryKeyRelatedField( queryset=LGA.objects.all(), required=False )
-    # Write field (accepts primary key)
     selected_state = serializers.PrimaryKeyRelatedField(
         queryset=State.objects.all(), required=False, write_only=True
     )
-    # Read field (displays full details)
     selected_state_details = StateSerializer(source='selected_state', read_only=True)
     
-    # Write field (accepts primary key)
     selected_lga = serializers.PrimaryKeyRelatedField(
         queryset=LGA.objects.all(), required=False, write_only=True
     )
-    # Read field (displays full details)
     selected_lga_details = LGASerializer(source='selected_lga', read_only=True)
     
     
@@ -243,6 +235,8 @@ class CurrentUserProfileSerializer(serializers.ModelSerializer):
     total_likes_given = serializers.SerializerMethodField()
     total_visits = serializers.SerializerMethodField()
     total_dislikes_given = serializers.SerializerMethodField()
+    online_status = serializers.SerializerMethodField()
+    is_online = serializers.BooleanField()
 
     class Meta:
         model = Profile
@@ -260,7 +254,7 @@ class CurrentUserProfileSerializer(serializers.ModelSerializer):
             'selected_state', 'selected_state_details', 'selected_country', 'selected_lga', 'selected_lga_details',
             #  'selected_state',  'selected_lga', 
              
-             'profile_visibility', 'show_online_status', 'show_distance',
+             'profile_visibility', 'show_online_status', 'show_distance','online_status', 'is_online',
             'user_type', 'is_verified',  'user_status', 'minimum_age_preference', 'maximum_age_preference', 'maximum_distance_preference', 'show_last_seen',
             # Information Level 4
             'email_notifications', 'push_notifications', 'in_app_notifications' , 'new_matches_notitication','new_messages_notitication', 'app_updates', 'profile_view_notitication',
@@ -285,9 +279,13 @@ class CurrentUserProfileSerializer(serializers.ModelSerializer):
     
     def get_latlng(self, obj):
         return obj.latlng()
-
+    def get_online_status(self, obj):
+        return obj.online_status
     def get_average_rating(self, obj):
         return obj.user.average_rating
+    
+    def get_online_status(self,obj):
+        return obj.online_status
     
     def update(self, instance, validated_data):
         # Extract nested user data (fields with source 'user')
