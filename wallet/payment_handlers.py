@@ -1,5 +1,4 @@
 
-import logging
 import requests
 from django.conf import settings
 from django.http import JsonResponse
@@ -7,9 +6,6 @@ from subscription.models import SubscriptionPlan, UserSubscription
 from .models import CoinRate, PaymentTransaction
 from django.utils import timezone
 #Fake PIN authentication	Mastercard	5531886652142950	09/32	564	12345	3310
-
-logger = logging.getLogger(__name__)
-
 class FlutterwaveHandler:
     API_BASE = 'https://api.flutterwave.com/v3'
     
@@ -41,10 +37,9 @@ class FlutterwaveHandler:
                 'description': plan.description
             }
         }
-        logger.info(f'me  {payload}')
+        
         response = requests.post(f"{self.API_BASE}/payments", json=payload, headers=headers)
         # print(response.json())
-        logger.info(f'me  {response.json()}')
         # Save transaction
         # if True:
         if response.status_code == 200:
@@ -64,7 +59,7 @@ class FlutterwaveHandler:
                 # return response.json()['data']['link']
                 return data['data']['link']
             except Exception as e:
-                 logger.info(f'Error creating payment transaction: {e}')
+                print(f'Error creating payment transaction: {e}')
         raise Exception("Payment initialization failed")
             
     def initialize_payment(self, user, naira_amount, coin_package=None):
