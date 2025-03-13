@@ -118,10 +118,19 @@ class MatchingService:
         if filter_conditions:
             base_queryset = base_queryset.filter(filter_conditions)
         print(len(base_queryset))
+
+           # Add online status annotation
+        base_queryset = base_queryset.annotate(
+            is_online=Case(
+                When(last_seen__gte=timezone.now()-timedelta(minutes=60), then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField()
+            )
+        )
         # Ordering logic
         if has_distance_annotation:
-            return base_queryset.order_by('-verified_rank', 'distance')
-        return base_queryset.order_by('-verified_rank')
+            return base_queryset.order_by('-is_online', '-verified_rank', 'distance')
+        return base_queryset.order_by('-is_online','-verified_rank')
      
 
 
@@ -135,14 +144,15 @@ class MatchingService:
             age_score = self._calculate_age_score(profile)
             # interests_score = self._calculate_interests_score(profile)
             lifestyle_score = self._calculate_lifestyle_score(profile)
+            online_score = 1.4 if profile.is_online else 1.0
 
             # Calculate weighted average score
-            total_score = (
+            total_score = ((
                 distance_score * self.preference_weights.distance_weight +
                 age_score * self.preference_weights.age_weight +
                 # interests_score * self.preference_weights.interests_weight +
                 lifestyle_score * self.preference_weights.lifestyle_weight
-            )
+            ) * online_score)
 
             scored_profiles.append((profile, total_score))
 

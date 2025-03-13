@@ -319,8 +319,10 @@ class MatchActionViewSet(viewsets.ModelViewSet):
             'relationship_goal': request.query_params.get('relationship_goal'),
             'verified_only': request.query_params.get('verified') == 'true',
             'online_status': request.query_params.get('online') == 'true',
+            'online_boost': not request.query_params.get('online'),
             'has_stories': request.query_params.get('stories') == 'true',
             'selected_states': selected_states_ids,
+
         }
         # Update user preferences with filters
         updated = False
@@ -341,6 +343,9 @@ class MatchActionViewSet(viewsets.ModelViewSet):
 
         matching_service = MatchingService(request.user, filter_params=filters)
         potential_matches = matching_service.get_potential_matches(limit=100)
+        # if filters['online_status']:
+        #     potential_matches = [p for p in potential_matches if p.is_online]
+
         paginator = pagination.PageNumberPagination()
         result_page = paginator.paginate_queryset(potential_matches, request,)
         serializer = ProfileMinimalSerializer(result_page, many=True,

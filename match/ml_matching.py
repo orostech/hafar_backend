@@ -173,8 +173,10 @@ class MLMatchingService:
                 created_at__gte=timezone.now()-timedelta(days=7)
             ).count() / (Message.objects.filter(sender=profile.user).count() or 1)
 
-          
+            is_online = 1 if (timezone.now() - profile.last_seen) < timedelta(minutes=40) else 0
             features = np.array([
+                float(is_online),  # New online status feature
+                float((timezone.now() - profile.last_seen).total_seconds() / 120),
                 float(profile.get_age() or 0),
                 float(profile.latitude or 0),
                 float(profile.longitude or 0),
