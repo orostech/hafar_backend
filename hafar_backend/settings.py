@@ -25,7 +25,7 @@ CORS_ALLOW_ALL_ORIGINS = DEBUG  # For development only
 
 
 CORS_ALLOWED_ORIGINS = [
-    'https://hafar-b5749.web.app/'
+   "https://hafar-b5749.web.app",
 #    "http://localhost:64975",
 #    "https://2938-102-89-69-178.ngrok-free.app"
 # # #     "http://127.0.0.1:8000",
