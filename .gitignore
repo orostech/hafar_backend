@@ -39,6 +39,10 @@ Thumbs.db
 .media/
 /media/
 
+
+# Ignore specific JSON file
+users/management/data/*.json
+
 # Coverage reports
 coverage/**
 *.cover
