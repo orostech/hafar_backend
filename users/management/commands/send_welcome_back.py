@@ -22,6 +22,13 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
+            "--batch-size", 
+            type=int, 
+            default=500, 
+            help="Number of users to process in each batch"
+        )
+
+        parser.add_argument(
             "--throttle", type=float, default=0.5,
             help="Delay between individual emails in seconds"
         )
@@ -30,9 +37,9 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        batch_size = options["batch_size"]
         throttle = options["throttle"]
         progress_file = Path(__file__).resolve().parent.parent / "data" / "email_progress.json"
-        # "email_progress.json"
         resume = options["resume"]
 
         # Load or create progress data
@@ -55,67 +62,79 @@ class Command(BaseCommand):
         email_service = EmailService()
         processed_count = 0
 
-        for user in all_users:
-            # print(user.id)
-            try:
-                # Update user activity
-                user.last_login = timezone.now()
-                user.save(update_fields=["last_login"])
-                user.profile.last_seen = timezone.now()
-                user.profile.save(update_fields=["last_seen"])
 
-                context = {
-                    'user': user,
-                    'site_name': 'Hafar',
-                    'play_store_url': "https://play.google.com/store/apps/details?id=com.orostech.hafar"
-                }
+        # Process in batches
+        for i in range(0, total_users, batch_size):
+            batch = all_users[i:i + batch_size]
+            self.stdout.write(f"Processing batch {i//batch_size + 1}...")
+        
+            for user in all_users:
+                # print(user.id)
+                try:
+                    # Update user activity
+                    user.last_login = timezone.now()
+                    user.save(update_fields=["last_login"])
+                    user.profile.last_seen = timezone.now()
+                    user.profile.save(update_fields=["last_seen"])
 
-                html_content = render_to_string(
-                    f'emails/platform_back_announcement.html', context)
-                text_content = strip_tags(html_content)
-                subject = "Welcome Back to Our Platform! 🎉"
+                    context = {
+                        'user': user,
+                        'site_name': 'Hafar',
+                        'play_store_url': "https://play.google.com/store/apps/details?id=com.orostech.hafar"
+                    }
 
-                # Prepare and send email
-                response = email_service.client.emails.send(
-                    From=email_service.default_from_email,
-                    To=user.email,
-                    Subject=subject,
-                    HtmlBody=html_content,
-                    TextBody=text_content,
-                    MessageStream="outbound"
-                )
+                    html_content = render_to_string(
+                        f'emails/platform_back_announcement.html', context)
+                    text_content = strip_tags(html_content)
+                    subject = "Welcome Back to Our Platform! 🎉"
 
-                if response["ErrorCode"] == 0:
-                    progress["succeeded"].append(user.email)
-                    self.stdout.write(f"✅ Success: {user.email}")
-                else:
+                    # Prepare and send email
+                    response = email_service.client.emails.send(
+                        From=email_service.default_from_email,
+                        To=user.email,
+                        Subject=subject,
+                        HtmlBody=html_content,
+                        TextBody=text_content,
+                        MessageStream="outbound"
+                    )
+
+                    if response["ErrorCode"] == 0:
+                        progress["succeeded"].append(user.email)
+                        self.stdout.write(f"✅ Success: {user.email}")
+                    else:
+                        progress["failed"].append({
+                            "email": user.email,
+                            "error": response["Message"]
+                        })
+                        self.stdout.write(f"❌ Failed: {user.email} - {response['Message']}")
+
+                except Exception as e:
+                    error_msg = str(e)
                     progress["failed"].append({
                         "email": user.email,
-                        "error": response["Message"]
+                        "error": error_msg
                     })
-                    self.stdout.write(f"❌ Failed: {user.email} - {response['Message']}")
+                    self.stdout.write(f"🚨 Error: {user.email} - {error_msg}")
 
-            except Exception as e:
-                error_msg = str(e)
-                progress["failed"].append({
-                    "email": user.email,
-                    "error": error_msg
-                })
-                self.stdout.write(f"🚨 Error: {user.email} - {error_msg}")
+                finally:
+                    # Update progress after each user
+                    progress["processed"].append(str(user.id))
+                    processed_count += 1
 
-            finally:
-                # Update progress after each user
-                progress["processed"].append(str(user.id))
-                processed_count += 1
+                    # Save progress every 50 users
+                    if processed_count % 50 == 0:
+                        with open(progress_file, "w") as f:
+                            json.dump(progress, f, indent=2)
+                        self.stdout.write(f"💾 Saved progress after {processed_count} users")
 
-                # Save progress every 50 users
-                if processed_count % 50 == 0:
-                    with open(progress_file, "w") as f:
-                        json.dump(progress, f, indent=2)
-                    self.stdout.write(f"💾 Saved progress after {processed_count} users")
+                    # Throttle requests
+                    time.sleep(throttle)
 
-                # Throttle requests
-                time.sleep(throttle)
+            # Save progress after each batch
+            with open(progress_file, "w") as f:
+                json.dump(progress, f, indent=2)
+            self.stdout.write(f"💾 Saved progress after batch {i//batch_size + 1}")
+
 
         # Final progress save
         with open(progress_file, "w") as f:
