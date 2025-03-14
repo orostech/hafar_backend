@@ -1,7 +1,9 @@
 # admin.py
 from django.contrib import admin
 from .models import (
-    OTP, User, Profile, UserPhoto, UserVideo, UserBlock, Rating, UserAudioRecording, VideoPreference
+    OTP, User, Profile, UserPhoto, UserVideo, UserBlock, Rating, UserAudioRecording
+    # , 
+    # VideoPreference
 )
 
 from django.contrib import admin
@@ -71,12 +73,12 @@ class UserAudioRecordingAdmin(admin.ModelAdmin):
     search_fields = ('user__username', 'title', 'description')
     autocomplete_fields = ('user',)
 
-@admin.register(VideoPreference)
-class VideoPreferenceAdmin(admin.ModelAdmin):
-    list_display = ('profile', 'video_quality', 'autoplay_videos', 'save_to_device')
-    list_filter = ('video_quality', 'autoplay_videos', 'save_to_device')
-    search_fields = ('profile__user__username',)
-    autocomplete_fields = ('profile',)
+# @admin.register(VideoPreference)
+# class VideoPreferenceAdmin(admin.ModelAdmin):
+#     list_display = ('profile', 'video_quality', 'autoplay_videos', 'save_to_device')
+#     list_filter = ('video_quality', 'autoplay_videos', 'save_to_device')
+#     search_fields = ('profile__user__username',)
+#     autocomplete_fields = ('profile',)
 
 
 @admin.register(OTP)

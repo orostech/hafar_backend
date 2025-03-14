@@ -660,24 +660,24 @@ class UserVideo(models.Model):
 # Update Profile model to include video preferences
 
 
-class VideoPreference(models.Model):
-    profile = models.OneToOneField(
-        'Profile', on_delete=models.CASCADE, related_name='video_preferences')
-    autoplay_videos = models.BooleanField(default=True)
-    video_quality = models.CharField(
-        max_length=10,
-        choices=[
-            ('AUTO', 'Auto'),
-            ('LOW', 'Low'),
-            ('MEDIUM', 'Medium'),
-            ('HIGH', 'High')
-        ],
-        default='AUTO'
-    )
-    save_to_device = models.BooleanField(default=False)
+# class VideoPreference(models.Model):
+#     profile = models.OneToOneField(
+#         'Profile', on_delete=models.CASCADE, related_name='video_preferences')
+#     autoplay_videos = models.BooleanField(default=True)
+#     video_quality = models.CharField(
+#         max_length=10,
+#         choices=[
+#             ('AUTO', 'Auto'),
+#             ('LOW', 'Low'),
+#             ('MEDIUM', 'Medium'),
+#             ('HIGH', 'High')
+#         ],
+#         default='AUTO'
+#     )
+#     save_to_device = models.BooleanField(default=False)
 
-    def __str__(self):
-        return f"{self.profile.user.username}'s video preferences"
+#     def __str__(self):
+#         return f"{self.profile.user.username}'s video preferences"
 
 
 def generate_otp():

@@ -8,14 +8,14 @@ from django.utils.html import strip_tags
 from pathlib import Path
 from django.template.loader import render_to_string
 
-# # Initial run with 0.5s delay between emails
+# # Default batch size (500) with 0.5s delay
 # python manage.py send_welcome_back --throttle 0.5
 
-# # Resume failed attempts
-# python manage.py send_welcome_back --resume
+# # Custom batch size (1000) with 0.5s delay
+# python manage.py send_welcome_back --batch-size 1000 --throttle 0.5
 
-# # For morning/afternoon batches (process 2000 users):
-# python manage.py send_welcome_back --throttle 0.3 --batch-size 2000
+# # Resume processing with custom batch size
+# python manage.py send_welcome_back --resume --batch-size 2000
 
 class Command(BaseCommand):
     help = "Sends welcome back emails individually with progress tracking"

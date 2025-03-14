@@ -8,7 +8,8 @@ from users.const import RELATIONSHIP_CHOICES
 from wallet.serializers import WalletSerializer
 from .models import (
     LGA, Profile, State, UserPhoto, UserVideo, UserBlock,
-    Rating, UserAudioRecording, VideoPreference
+    Rating, UserAudioRecording
+    # , VideoPreference
 )
 from django.contrib.gis.geos import Point
 
@@ -91,10 +92,10 @@ class UserAudioRecordingSerializer(serializers.ModelSerializer):
         read_only_fields = ('created_at', 'updated_at')
 
 
-class VideoPreferenceSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = VideoPreference
-        fields = ('id', 'autoplay_videos', 'video_quality', 'save_to_device')
+# class VideoPreferenceSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = VideoPreference
+#         fields = ('id', 'autoplay_videos', 'video_quality', 'save_to_device')
 
 class UserBlockSerializer(serializers.ModelSerializer):
     class Meta:
