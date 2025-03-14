@@ -24,13 +24,14 @@ ALLOWED_HOSTS = config('ALLOWED_HOSTS',cast=Csv())
 # CORS_ALLOW_ALL_ORIGINS = True  # For development only
 
 
-# CORS_ALLOWED_ORIGINS = [
+CORS_ALLOWED_ORIGINS = [
+    'https://hafar-b5749.web.app/'
 #    "http://localhost:64975",
 #    "https://2938-102-89-69-178.ngrok-free.app"
 # # #     "http://127.0.0.1:8000",
 # # #     "http://localhost",
 # # #     "http://10.0.2.2:8000",    # Android emulator
-# ]
+]
 
 
 FLUTTERWAVE_SECRET_KEY = config('FLUTTERWAVE_SECRET_KEY')
@@ -51,7 +52,7 @@ INSTALLED_APPS = [
 
     # APPS
     'rest_framework',
-    #  'corsheaders',
+     'corsheaders',
     'rest_framework_simplejwt',
     'channels',
     'storages',
@@ -73,9 +74,10 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+      'django.middleware.csrf.CsrfViewMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
   
     'django.contrib.auth.middleware.AuthenticationMiddleware',
