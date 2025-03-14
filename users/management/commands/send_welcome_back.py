@@ -143,3 +143,23 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(
             f"✅ Completed! Success: {len(progress['succeeded'])}, Failed: {len(progress['failed'])}"
         ))
+
+
+# from django.contrib.auth import get_user_model
+# User = get_user_model()
+
+# emails_to_delete = [
+#     "jokon2890@gmail.co",
+#     "emily_f@gmai.com",
+#     "oluchinwamak66@gmail.com",
+#     "roqeebolamilekanrichie@gmail.com",
+#     "abubakarasheer.mukhtar5566@gmail.com"
+# ]
+
+# for email in emails_to_delete:
+#     try:
+#         user = User.objects.get(email=email)
+#         print(f"Deleting user with email: {user.email}")
+#         user.delete()  # Cascades deletion if related objects are configured with on_delete=models.CASCADE.
+#     except User.DoesNotExist:
+#         print(f"No user found with email: {email}")

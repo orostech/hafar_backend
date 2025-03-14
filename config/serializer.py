@@ -22,10 +22,10 @@ class MaintenanceSerializer(serializers.ModelSerializer):
 class DashboardMetricSerializer(serializers.Serializer):
     total_users = serializers.IntegerField()
     active_users = serializers.IntegerField()
-    pending_verification = serializers.IntegerField()
-    total_earnings = serializers.DecimalField(max_digits=12, decimal_places=2)
-    total_coins = serializers.IntegerField()
+    pending_approval = serializers.IntegerField()
     new_users_today = serializers.IntegerField()
+    # total_earnings = serializers.DecimalField(max_digits=12, decimal_places=2)
+    total_coins = serializers.IntegerField()
     matches_count = serializers.IntegerField()
     premium_matches = serializers.IntegerField()
     likes_count = serializers.IntegerField()

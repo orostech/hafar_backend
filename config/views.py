@@ -1,12 +1,13 @@
 from rest_framework.viewsets import ReadOnlyModelViewSet
+from gift.models import VirtualGift
 from users.const import *
-from wallet.models import CoinRate
+from wallet.models import CoinRate, PaymentTransaction, Wallet
 from wallet.serializers import CoinRateSerializer
 from .models import AppConfiguration, AppMaintenance
 from .serializer import AdminProfileSerializer,AdminProfileListSerializer, AppConfigurationSerializer, MaintenanceSerializer, DashboardMetricSerializer, TrendMetricSerializer, ChartDataSerializer
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from subscription.models import SubscriptionPlan
+from subscription.models import SubscriptionPlan, UserSubscription
 from subscription.serializers import SubscriptionPlanSerializer
 from rest_framework import viewsets
 from users.models import  Profile
@@ -14,6 +15,11 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django.utils import timezone
+from datetime import timedelta
+from django.db.models import Sum, Count
+from django.db.models.functions import TruncDate
+from match. models import Boost, Match,Like
 
 # from .serializers import AdminProfileSerializer
 from .permissions import IsAdminUser
@@ -193,9 +199,9 @@ class DashboardViewSet(viewsets.ViewSet):
         metrics = {
             'total_users': Profile.objects.count(),
             'active_users': Profile.objects.filter(last_seen__gte=thirty_days_ago).count(),
-            'pending_verification': Profile.objects.filter(is_verified='PENDING').count(),
-            'total_coins': Wallet.objects.aggregate(total=Sum('balance'))['total'] or 0,
+            'pending_approval': Profile.objects.filter(user_status='PA').count,
             'new_users_today': Profile.objects.filter(created_at__date=timezone.now().date()).count(),
+            'total_coins': Wallet.objects.aggregate(total=Sum('balance'))['total'] or 0,
             'matches_count': Match.objects.count(),
             'premium_matches': Match.objects.filter(is_premium=True).count(),
             'likes_count': Like.objects.count(),
@@ -203,19 +209,20 @@ class DashboardViewSet(viewsets.ViewSet):
             'active_subscriptions': UserSubscription.objects.filter(is_active=True).count(),
         }
 
-        # Financial calculations
-        payment_txns = PaymentTransaction.objects.filter(status='COMPLETED')
-        metrics['total_earnings'] = payment_txns.aggregate(total=Sum('naira_amount'))['total'] or 0
+        # # Financial calculations
+        # payment_txns = PaymentTransaction.objects.filter(status='COMPLETED')
+        # metrics['total_earnings'] = payment_txns.aggregate(total=Sum('naira_amount'))['total'] or 0
         
         # Gift revenue (10% platform fee)
+        from decimal import Decimal
         total_gift_coins = VirtualGift.objects.aggregate(total=Sum('coins_value'))['total'] or 0
-        metrics['gift_revenue'] = (total_gift_coins * 0.10) / CoinRate.objects.latest('created_at').rate
+        metrics['gift_revenue'] = (Decimal(total_gift_coins) * Decimal('0.10')) / CoinRate.objects.latest('created_at').rate
         
         # Subscription revenue
         active_subs = UserSubscription.objects.filter(is_active=True)
         metrics['subscription_revenue'] = sum(
             sub.plan.get_naira_amount() for sub in active_subs
-            if sub.purchase_method == 'COINS'
+            # if sub.purchase_method == 'COINS'
         )
 
         return Response(DashboardMetricSerializer(metrics).data)
@@ -278,25 +285,35 @@ class DashboardViewSet(viewsets.ViewSet):
         user_data = Profile.objects.annotate(
             date=TruncDate('created_at')
         ).values('date').annotate(
-            count=Count('id')
+            count=Count('user')
         ).order_by('date')
-        
+        if not user_data:
+             chart_data['labels'] = []
         # Revenue breakdown
+        from decimal import Decimal
         revenue_sources = {
             'subscriptions': sum(sub.plan.get_naira_amount() for sub in UserSubscription.objects.filter(is_active=True)),
-            'gifts': (VirtualGift.objects.aggregate(total=Sum('coins_value'))['total'] or 0) * 0.10 / CoinRate.objects.latest().rate,
-            'boosts': Boost.objects.aggregate(total=Sum('coin_cost'))['total'] or 0,
+            'gifts': (VirtualGift.objects.aggregate(total=Sum('coins_value'))['total'] or 0) * Decimal('0.10') / CoinRate.objects.latest().rate,
+            # 'boosts': Boost.objects.aggregate(total=Sum('coin_cost'))['total'] or 0,
+             'boosts': Boost.objects.filter(is_active=True).count() * 100,  # Assuming each boost costs 100 coins
         }
         
-        # Format chart data
+        # # Format chart data
+        # chart_data = {
+        #     'user_growth': {
+        #         'labels': [entry['date'].strftime('%Y-%m-%d') for entry in user_data],
+        #         'datasets': {'label': 'New Users', 'data': [entry['count'] for entry in user_data]}
+        #     },
+        #     'revenue_breakdown': {
+        #         'labels': list(revenue_sources.keys()),
+        #         'datasets': {'label': 'Revenue', 'data': list(revenue_sources.values())}
+        #     }
+        # }
         chart_data = {
-            'user_growth': {
-                'labels': [entry['date'].strftime('%Y-%m-%d') for entry in user_data],
-                'datasets': {'label': 'New Users', 'data': [entry['count'] for entry in user_data]}
-            },
-            'revenue_breakdown': {
-                'labels': list(revenue_sources.keys()),
-                'datasets': {'label': 'Revenue', 'data': list(revenue_sources.values())}
+            'labels': [entry['date'].strftime('%Y-%m-%d') for entry in user_data],  # Ensure labels exist
+            'datasets': {
+                'user_growth': {'label': 'New Users', 'data': [entry['count'] for entry in user_data]},
+                'revenue_breakdown': {'label': 'Revenue', 'data': list(revenue_sources.values())}
             }
         }
         
