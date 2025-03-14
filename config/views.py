@@ -15,7 +15,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from datetime import timezone,timedelta
+from django.utils import timezone
+from datetime import timedelta
 from django.db.models import Sum, Count
 from django.db.models.functions import TruncDate
 from match. models import Boost, Match,Like
