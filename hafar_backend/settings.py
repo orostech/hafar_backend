@@ -21,7 +21,7 @@ SECRET_KEY = config('SECRET_KEY')
 ALLOWED_HOSTS = config('ALLOWED_HOSTS',cast=Csv())
 
 
-# CORS_ALLOW_ALL_ORIGINS = True  # For development only
+CORS_ALLOW_ALL_ORIGINS = DEBUG  # For development only
 
 
 CORS_ALLOWED_ORIGINS = [
