@@ -1,4 +1,5 @@
 # notifications/email_service.py
+import time
 from django.core.mail import send_mail, EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.conf import settings
@@ -6,7 +7,8 @@ from django.conf import settings
 from postmarker.core import PostmarkClient
 from django.utils.html import strip_tags
 import logging
-
+from django.core.management.base import BaseCommand
+from django.core.mail import get_connection, EmailMessage
 logger = logging.getLogger(__name__)
 
 
@@ -68,59 +70,34 @@ class EmailService:
 
             # Prepare batch emails
             emails = []
+            messages = []
+            count = 0
             for user in recipients:
-                self._send_email_template(
-                    user.email,
-                    f"{self.site_name} is Back with Exciting Updates!",
-                    'platform_back_announcement',
-                    context
-                )
-
-                # email = {
-                #     'From': self.default_from_email,
-                #     'To': user.email,
-                #     'Subject': f"{self.site_name} is Back with Exciting Updates!",
-                #     'HtmlBody': html_content,
-                #     'TextBody': text_content,
-                #     'MessageStream': 'outbound'
-                # }
-                # emails.append(email)
-
-            all_success = True
-            
-            for i in range(0, len(emails), 500):
-                batch = emails[i:i+500]
+                subject = "Our Platform is Back Online!"
+                message = (
+                        f"Hello {user.email or 'User'},\n\n"
+                        "We’re excited to let you know that our platform is back up and running. "
+                        "Thank you for your patience!"
+                    )
+    
+                messages.append({
+                "From": self.default_from_email,
+                "To": user.email,
+                "Subject": "Welcome Back!",
+                "TextBody": message,
+                "MessageStream": "outbound"
+            })
+              # Send in batches of 500
+            for i in range(0, len(messages), 500):
+                batch = messages[i:i+500]
+                self.client.emails.send_batch(batch)
+                time.sleep(1)  # Rate limiting
                 
-                try:
-                    responses = self.client.emails.send_batch(batch)
-                    logger.debug(f"Batch Response: {responses}")
-
-                    for response in responses:
-                        if not isinstance(response, dict):
-                            all_success = False
-                            logger.error(f"Invalid response format: {response}")
-                        elif response.get('ErrorCode', 1) != 0:
-                            all_success = False
-                            logger.error(f"Email sending failed for an email: {response}")
-                        
-                except Exception as e:
-                    all_success = False
-                    logger.error(f"Batch email sending failed: {str(e)}", exc_info=True)
-                        
-                        
-                        
-            
-            
-            
-            if all_success:
-                logger.info(f"Sent bulk announcement to {len(recipients)} users successfully")
-            else:
-                logger.error("Some emails in bulk announcement failed to send.")
-            return all_success
+            return True
         except Exception as e:
-            
             logger.error(f"Bulk email failed: {str(e)}")
             return False
+                
 
 
     def send_revival_announcement(self):

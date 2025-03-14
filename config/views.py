@@ -3,7 +3,7 @@ from users.const import *
 from wallet.models import CoinRate
 from wallet.serializers import CoinRateSerializer
 from .models import AppConfiguration, AppMaintenance
-from .serializer import AdminProfileSerializer,AdminProfileListSerializer, AppConfigurationSerializer, MaintenanceSerializer
+from .serializer import AdminProfileSerializer,AdminProfileListSerializer, AppConfigurationSerializer, MaintenanceSerializer, DashboardMetricSerializer, TrendMetricSerializer, ChartDataSerializer
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from subscription.models import SubscriptionPlan
@@ -12,6 +12,9 @@ from rest_framework import viewsets
 from users.models import  Profile
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
+from rest_framework.decorators import action
+from rest_framework.response import Response
+
 # from .serializers import AdminProfileSerializer
 from .permissions import IsAdminUser
 
@@ -99,38 +102,6 @@ class ConfigurationViewSet(ReadOnlyModelViewSet):
     def _get_coin_rate(self):
         return CoinRateSerializer(CoinRate.objects.latest('created_at')).data
 
-    # @action(detail=False, methods=['get'])
-    # def initial_load(self, request):      
-    #     config_data = {
-    #         'app_version': {
-    #         'min_supported': '1.0.0',
-    #         'latest': '1.0.0',
-    #         'force_update': False
-    #         },
-    #         'choices': {
-    #         'account_status': self._format_choices(ACCOUNT_STATUS_CHOICES),
-    #         'visibility': self._format_choices(VISIBILITY_CHOICES),
-    #         'verification_status': self._format_choices(VERIFICATION_STATUS_CHOICES)
-    #         },
-    #         'defaults': {
-    #         'max_photos': 9,
-    #         'max_interests': 5,
-    #         'min_age': 18,
-    #         'max_age': 100,
-    #         'default_radius': 100,
-    #         },
-    #         'feature_flags': {
-    #         'allow_deposit': True,
-    #         'allow_withdrawal': True,
-    #         'allow_coin_transfer': True,
-    #         'allow_referral_bonus': True,
-    #         }
-    #     }
-    #     config_data['coinrate'] =  CoinRateSerializer(CoinRate.objects.filter(is_active=True).latest('created_at')).data
-    #     config_data['subscription_plans'] = SubscriptionPlanSerializer(SubscriptionPlan.objects.filter(is_active=True),many=True).data
-
-    #     return Response(config_data)
-
     def _format_choices(self, choices):
         return [{'code': code, 'label': label} for code, label in choices]
 
@@ -141,7 +112,7 @@ class AdminUserViewSet(viewsets.ModelViewSet):
     queryset = Profile.objects.select_related('user')
     serializer_class = AdminProfileListSerializer
     # AdminProfileSerializer
-    # permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     search_fields = ['user__email', 'display_name'
                     #  , 
@@ -210,3 +181,123 @@ class AdminUserViewSet(viewsets.ModelViewSet):
         return Response({'status': 'password reset'})
     
   
+
+class DashboardViewSet(viewsets.ViewSet):
+    permission_classes = [IsAdminUser]
+    
+    @action(detail=False, methods=['get'])
+    def metrics(self, request):
+        # Core metrics calculation
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+        
+        metrics = {
+            'total_users': Profile.objects.count(),
+            'active_users': Profile.objects.filter(last_seen__gte=thirty_days_ago).count(),
+            'pending_verification': Profile.objects.filter(is_verified='PENDING').count(),
+            'total_coins': Wallet.objects.aggregate(total=Sum('balance'))['total'] or 0,
+            'new_users_today': Profile.objects.filter(created_at__date=timezone.now().date()).count(),
+            'matches_count': Match.objects.count(),
+            'premium_matches': Match.objects.filter(is_premium=True).count(),
+            'likes_count': Like.objects.count(),
+            'super_likes_count': Like.objects.filter(like_type='SUPER').count(),
+            'active_subscriptions': UserSubscription.objects.filter(is_active=True).count(),
+        }
+
+        # Financial calculations
+        payment_txns = PaymentTransaction.objects.filter(status='COMPLETED')
+        metrics['total_earnings'] = payment_txns.aggregate(total=Sum('naira_amount'))['total'] or 0
+        
+        # Gift revenue (10% platform fee)
+        total_gift_coins = VirtualGift.objects.aggregate(total=Sum('coins_value'))['total'] or 0
+        metrics['gift_revenue'] = (total_gift_coins * 0.10) / CoinRate.objects.latest('created_at').rate
+        
+        # Subscription revenue
+        active_subs = UserSubscription.objects.filter(is_active=True)
+        metrics['subscription_revenue'] = sum(
+            sub.plan.get_naira_amount() for sub in active_subs
+            if sub.purchase_method == 'COINS'
+        )
+
+        return Response(DashboardMetricSerializer(metrics).data)
+
+    @action(detail=False, methods=['get'])
+    def trends(self, request):
+        def calculate_trend(current, previous):
+            if previous == 0:
+                return {'percentage_change': 100.0, 'trend': 'up'}
+            change = ((current - previous) / previous) * 100
+            return {
+                'percentage_change': abs(round(change, 1)),
+                'trend': 'up' if change > 0 else 'down'
+            }
+
+        # Date ranges
+        current_start = timezone.now() - timedelta(days=7)
+        previous_start = current_start - timedelta(days=7)
+        
+        # User trends
+        current_users = Profile.objects.filter(created_at__gte=current_start).count()
+        previous_users = Profile.objects.filter(
+            created_at__gte=previous_start,
+            created_at__lt=current_start
+        ).count()
+        user_trend = calculate_trend(current_users, previous_users)
+
+        # Engagement trends
+        current_likes = Like.objects.filter(created_at__gte=current_start).count()
+        previous_likes = Like.objects.filter(
+            created_at__gte=previous_start,
+            created_at__lt=current_start
+        ).count()
+        like_trend = calculate_trend(current_likes, previous_likes)
+
+        # Financial trends
+        current_revenue = PaymentTransaction.objects.filter(
+            created_at__gte=current_start,
+            status='COMPLETED'
+        ).aggregate(total=Sum('naira_amount'))['total'] or 0
+        
+        previous_revenue = PaymentTransaction.objects.filter(
+            created_at__gte=previous_start,
+            created_at__lt=current_start,
+            status='COMPLETED'
+        ).aggregate(total=Sum('naira_amount'))['total'] or 0
+        revenue_trend = calculate_trend(current_revenue, previous_revenue)
+
+        trends = [
+            {'label': 'New Users', **user_trend, 'current': current_users},
+            {'label': 'Engagement', **like_trend, 'current': current_likes},
+            {'label': 'Revenue', **revenue_trend, 'current': current_revenue}
+        ]
+        
+        return Response(TrendMetricSerializer(trends, many=True).data)
+
+    @action(detail=False, methods=['get'])
+    def charts(self, request):
+        # User growth chart
+        user_data = Profile.objects.annotate(
+            date=TruncDate('created_at')
+        ).values('date').annotate(
+            count=Count('id')
+        ).order_by('date')
+        
+        # Revenue breakdown
+        revenue_sources = {
+            'subscriptions': sum(sub.plan.get_naira_amount() for sub in UserSubscription.objects.filter(is_active=True)),
+            'gifts': (VirtualGift.objects.aggregate(total=Sum('coins_value'))['total'] or 0) * 0.10 / CoinRate.objects.latest().rate,
+            'boosts': Boost.objects.aggregate(total=Sum('coin_cost'))['total'] or 0,
+        }
+        
+        # Format chart data
+        chart_data = {
+            'user_growth': {
+                'labels': [entry['date'].strftime('%Y-%m-%d') for entry in user_data],
+                'datasets': {'label': 'New Users', 'data': [entry['count'] for entry in user_data]}
+            },
+            'revenue_breakdown': {
+                'labels': list(revenue_sources.keys()),
+                'datasets': {'label': 'Revenue', 'data': list(revenue_sources.values())}
+            }
+        }
+        
+        return Response(ChartDataSerializer(chart_data).data)

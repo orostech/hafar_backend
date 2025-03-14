@@ -17,6 +17,33 @@ class MaintenanceSerializer(serializers.ModelSerializer):
         model = AppMaintenance
         fields = '__all__'
 
+
+
+class DashboardMetricSerializer(serializers.Serializer):
+    total_users = serializers.IntegerField()
+    active_users = serializers.IntegerField()
+    pending_verification = serializers.IntegerField()
+    total_earnings = serializers.DecimalField(max_digits=12, decimal_places=2)
+    total_coins = serializers.IntegerField()
+    new_users_today = serializers.IntegerField()
+    matches_count = serializers.IntegerField()
+    premium_matches = serializers.IntegerField()
+    likes_count = serializers.IntegerField()
+    super_likes_count = serializers.IntegerField()
+    active_subscriptions = serializers.IntegerField()
+    gift_revenue = serializers.DecimalField(max_digits=12, decimal_places=2)
+    subscription_revenue = serializers.DecimalField(max_digits=12, decimal_places=2)
+
+class TrendMetricSerializer(serializers.Serializer):
+    label = serializers.CharField()
+    current = serializers.IntegerField()
+    previous = serializers.IntegerField()
+    percentage_change = serializers.FloatField()
+    trend_direction = serializers.CharField()
+
+class ChartDataSerializer(serializers.Serializer):
+    labels = serializers.ListField(child=serializers.CharField())
+    datasets = serializers.DictField()
 class AdminProfileSerializer(ProfileSerializer):
     class Meta(ProfileSerializer.Meta):
         fields = ProfileSerializer.Meta.fields + tuple(['user_status', 'is_verified'])
@@ -37,10 +64,3 @@ class AdminProfileListSerializer(ProfileMinimalSerializer):
         fields = ['id','email', 'display_name', 'profile_photo','created_at','average_rating','gender','state', 'country','user_status',
                 'online_status','is_premium','latlng'
                   ]
-    # def get_profile_photo(self, obj):
-    #     photo = obj.user.photos.filter(is_primary=True).first()
-    #     if photo:
-    #         if not photo.image:
-    #             return photo.image_url
-    #         return photo.image.url
-    #     return None 

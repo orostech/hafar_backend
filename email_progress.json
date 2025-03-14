@@ -1,0 +1,12 @@
+{
+  "processed": [
+    "a1840de6-ab3b-4e02-9faa-64629b59c3a2"
+  ],
+  "succeeded": [],
+  "failed": [
+    {
+      "email": "qwerty@gmail.com",
+      "error": "User has no profile."
+    }
+  ]
+}
