@@ -452,7 +452,7 @@ class Profile(models.Model):
             self.location,
             self.gender,
             self.relationship_status,
-            self.looking_for,
+            self.relationship_goal,
             self.height,
             self.weight,
             self.profession,
