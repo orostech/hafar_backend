@@ -8,19 +8,6 @@ from .models import (
 
 from django.contrib import admin
 from users.models import State, LGA
-from rest_framework.authtoken.models import Token
-
-@admin.register(Token)
-class TokenAdmin(admin.ModelAdmin):
-    list_display = ('key', 'user', 'created')  # Display token, user, and creation date
-    search_fields = ('user__username', 'key')  # Enable searching by username or token key
-    readonly_fields = ('key', 'created')  # Make fields read-only
-
-    def has_add_permission(self, request):
-        return False  # Prevent creating tokens from admin panel
-
-    def has_change_permission(self, request, obj=None):
-        return False  # Prevent modifying tokens
 
 class LGAInline(admin.TabularInline):  # Allows editing LGAs within the State admin page
     model = LGA
