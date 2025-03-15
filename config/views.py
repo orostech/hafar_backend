@@ -218,6 +218,7 @@ class AdminUserViewSet(viewsets.ModelViewSet):
 
 class DashboardViewSet(viewsets.ViewSet):
     permission_classes = [IsAdminUser]
+    
 
     @action(detail=False, methods=['get'])
     def metrics(self, request):
@@ -228,7 +229,6 @@ class DashboardViewSet(viewsets.ViewSet):
             'total_users': Profile.objects.count(),
             'active_users': Profile.objects.filter(last_seen__gte=thirty_days_ago).count(),
             'pending_approval': Profile.objects.filter(user_status='PA').count,
-            # 'new_users_today': Profile.objects.filter(created_at__date=timezone.now().date()).count(),
             'new_users_today': Profile.objects.filter(created_at__date=timezone.now().date()).count(),
             'total_coins': Wallet.objects.aggregate(total=Sum('balance'))['total'] or 0,
             'matches_count': Match.objects.count(),

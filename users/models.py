@@ -449,7 +449,26 @@ class Profile(models.Model):
             self.date_of_birth,
             self.latitude,
             self.longitude,
-            # self.interests.exists(),
+            self.location,
+            self.gender,
+            self.relationship_status,
+            self.looking_for,
+            self.height,
+            self.weight,
+            self.profession,
+            self.address,
+            self.state,
+            self.country,
+            # self.selected_state,
+            # self.selected_lga,
+            # self.selected_address,
+            self.selected_country,
+            # self.user_type,
+            self.is_verified,
+            # self.user_status,
+
+            
+            # self.profile_visibility,
             self.user.photos.exists()
         ]
         completed = sum(1 for field in required_fields if field)
