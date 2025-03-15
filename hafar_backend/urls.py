@@ -79,7 +79,7 @@ urlpatterns = [
     path('webhooks/flutterwave/', flutterwave_webhook, name='flutterwave-webhook'),
     path('test/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
-    path('admin/', admin.site.urls),
+    path('adminn/', admin.site.urls),
 
     #  path("mm/", APIIRootView.as_view(), name='apii-root'),
 

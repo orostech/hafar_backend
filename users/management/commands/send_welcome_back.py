@@ -15,7 +15,7 @@ from django.template.loader import render_to_string
 # python manage.py send_welcome_back --batch-size 1000 --throttle 0.5
 
 # # Resume processing with custom batch size
-# python manage.py send_welcome_back --resume --batch-size 2000
+# python manage.py send_welcome_back --resume --batch-size 2000 --throttle 0.5
 
 class Command(BaseCommand):
     help = "Sends welcome back emails individually with progress tracking"

@@ -129,10 +129,10 @@ class ConfigurationViewSet(ReadOnlyModelViewSet):
         return [{'code': code, 'label': label} for code, label in choices]
 
 class UserFilter(FilterSet):
-    start_date = DateTimeFilter(field_name='created_at', lookup_expr='gte')
-    end_date = DateTimeFilter(field_name='created_at', lookup_expr='lte')
-    # start_date = DateFilter(field_name='created_at', lookup_expr='gte')
-    # end_date = DateFilter(field_name='created_at', lookup_expr='lte')
+    # start_date = DateTimeFilter(field_name='created_at', lookup_expr='gte')
+    # end_date = DateTimeFilter(field_name='created_at', lookup_expr='lte')
+    start_date = DateFilter(field_name='created_at', lookup_expr='gte')
+    end_date = DateFilter(field_name='created_at', lookup_expr='lte')
     
     class Meta:
         model = Profile
